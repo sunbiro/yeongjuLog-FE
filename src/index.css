@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+@theme {
+  --color-darkslateblue: #183b76;
+  --color-gold: #fee500;
+  --font-inter: Inter, system-ui, sans-serif;
+}
+
+:root {
+  font-family: Inter, Pretendard, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  color: #f8fafc;
+  background-color: #0b1020;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  min-height: 100dvh;
+}
+
+body {
+  margin: 0;
+  overflow-x: hidden;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+.app-bg {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(circle at top, rgba(30, 64, 175, 0.28), transparent 36%),
+    linear-gradient(180deg, #09111f 0%, #0f1a31 100%);
+}
+
+.mobile-frame {
+  width: min(390px, 100vw);
+  height: 844px;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+  background: #0b1020;
+}
+
+.safe-screen {
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  padding-top: 16px;
+  padding-right: 16px;
+  padding-bottom: 16px;
+  padding-left: 16px;
+}
+
+@media (max-width: 390px) {
+  .mobile-frame {
+    height: 100dvh;
+  }
+}
