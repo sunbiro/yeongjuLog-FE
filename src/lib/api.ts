@@ -16,7 +16,12 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
   if (!res.ok) {
     const error = await res.json().catch(() => ({}));
-    throw new Error((error as { message?: string }).message ?? `HTTP ${res.status}`);
+    const { message, errorCode } = error as { message?: string; errorCode?: string };
+    throw new Error(
+      [message ?? `HTTP ${res.status}`, errorCode ? `(${errorCode})` : ""]
+        .filter(Boolean)
+        .join(" "),
+    );
   }
 
   return res.json() as Promise<T>;

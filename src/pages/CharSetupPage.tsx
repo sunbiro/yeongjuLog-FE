@@ -25,7 +25,7 @@ const STYLE_MAP: Record<string, string> = {
 
 export default function CharSetupPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { accessToken, user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState("");
   const [trait, setTrait] = useState("");
@@ -36,6 +36,12 @@ export default function CharSetupPage() {
   const handlePhotoCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (!accessToken || !user?.id) {
+      setError("로그인이 필요합니다. 다시 로그인해 주세요.");
+      navigate("/", { replace: true });
+      return;
+    }
 
     // 미리보기
     const reader = new FileReader();
@@ -53,7 +59,7 @@ export default function CharSetupPage() {
     };
 
     const form = new FormData();
-    form.append("userId", String(user?.id ?? 0));
+    form.append("userId", String(user.id));
     form.append("photo", file);
     form.append(
       "features",
@@ -67,9 +73,15 @@ export default function CharSetupPage() {
       sessionStorage.setItem("charImageUrl", res.data.imageUrl);
       sessionStorage.setItem("characterId", String(res.data.characterId));
       navigate("/char-result");
-    } catch {
+    } catch (err) {
+      console.error(err);
+      const message =
+        err instanceof Error
+          ? err.message
+          : "캐릭터 생성에 실패했습니다. 다시 시도해 주세요.";
       setError("캐릭터 생성에 실패했습니다. 다시 시도해주세요.");
       setLoading(false);
+      setError(message);
     }
   };
 

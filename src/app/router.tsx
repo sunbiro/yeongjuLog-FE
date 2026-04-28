@@ -14,7 +14,7 @@ import SosuSeowonPage from "@/pages/SosuSeowonPage";
 
 export const router = createBrowserRouter([
   { path: "/", element: <LoginPage /> },
-  { path: "/auth/callback", element: <KakaoCallbackPage /> },
+  { path: "/auth/kakao/callback", element: <KakaoCallbackPage /> },
   { path: "/theme", element: <ThemeSelectPage /> },
   { path: "/char-setup", element: <CharSetupPage /> },
   { path: "/char-result", element: <CharResultPage /> },

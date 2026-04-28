@@ -6,8 +6,14 @@ import sunbiroLogo from "@/assets/images/sunbiro_logo.png";
 import yeongjuCityLogo from "@/assets/images/yeongju_logo.png";
 import { useEffect } from "react";
 
-const KAKAO_CLIENT_ID = import.meta.env.VITE_KAKAO_CLIENT_ID as string;
-const REDIRECT_URI = import.meta.env.VITE_KAKAO_REDIRECT_URI as string;
+const KAKAO_CLIENT_ID = import.meta.env.VITE_KAKAO_CLIENT_ID as string | undefined;
+const REDIRECT_URI = import.meta.env.VITE_KAKAO_REDIRECT_URI as string | undefined;
+const KAKAO_CLIENT_ID_PLACEHOLDER = "your_kakao_client_id_here";
+
+function hasOAuthEnvValue(value: string | undefined, placeholder?: string): value is string {
+  const trimmed = value?.trim();
+  return Boolean(trimmed) && trimmed !== placeholder;
+}
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -20,11 +26,23 @@ export default function LoginPage() {
   }, [accessToken, navigate]);
 
   const handleKakaoLogin = () => {
-    const url =
-      `https://kauth.kakao.com/oauth/authorize` +
-      `?client_id=${KAKAO_CLIENT_ID}` +
-      `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
-      `&response_type=code`;
+    if (
+      !hasOAuthEnvValue(KAKAO_CLIENT_ID, KAKAO_CLIENT_ID_PLACEHOLDER) ||
+      !hasOAuthEnvValue(REDIRECT_URI)
+    ) {
+      console.error(
+        "Kakao login is not configured. Set VITE_KAKAO_CLIENT_ID and VITE_KAKAO_REDIRECT_URI in .env, then restart Vite.",
+      );
+      alert("Kakao login is not configured. Please check the frontend .env file.");
+      return;
+    }
+
+    const params = new URLSearchParams({
+      client_id: KAKAO_CLIENT_ID,
+      redirect_uri: REDIRECT_URI,
+      response_type: "code",
+    });
+    const url = `https://kauth.kakao.com/oauth/authorize?${params.toString()}`;
     window.location.href = url;
   };
 

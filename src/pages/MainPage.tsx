@@ -1,6 +1,9 @@
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 
 import MobileFrameLayout from "@/components/layout/MobileFrameLayout";
+import { useAuth } from "@/context/AuthContext";
+import { api } from "@/lib/api";
 import backgroundMain from "@/assets/images/background_main.png";
 import mainBackground from "@/assets/images/main_background.jpg";
 import charImg from "@/assets/images/char.png";
@@ -39,6 +42,16 @@ type NavItem = {
   width: number;
   height: number;
   path: string;
+};
+
+type CharacterResponse = {
+  success: boolean;
+  data: {
+    imageUrl: string;
+    characterId: number;
+    userId: number;
+    createdAt: string;
+  } | null;
 };
 
 const markers: Marker[] = [
@@ -159,6 +172,38 @@ const navItems: NavItem[] = [
 
 export default function MainPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [characterImageUrl, setCharacterImageUrl] = useState<string | null>(
+    () => sessionStorage.getItem("charImageUrl"),
+  );
+  const [failedCharacterImageUrl, setFailedCharacterImageUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (characterImageUrl || !user?.id) return;
+
+    api
+      .get<CharacterResponse>(`/characters/${user.id}/current`)
+      .then((res) => {
+        if (!res.data?.imageUrl) return;
+        if (res.data.imageUrl === failedCharacterImageUrl) return;
+
+        sessionStorage.setItem("charImageUrl", res.data.imageUrl);
+        sessionStorage.setItem("characterId", String(res.data.characterId));
+        setCharacterImageUrl(res.data.imageUrl);
+      })
+      .catch((err) => {
+        console.error(err);
+      });
+  }, [characterImageUrl, failedCharacterImageUrl, user?.id]);
+
+  const handleCharacterImageError = () => {
+    if (!characterImageUrl) return;
+
+    console.warn("Failed to load character image:", characterImageUrl);
+    sessionStorage.removeItem("charImageUrl");
+    setFailedCharacterImageUrl(characterImageUrl);
+    setCharacterImageUrl(null);
+  };
 
   return (
     <MobileFrameLayout padded={false}>
@@ -195,10 +240,11 @@ export default function MainPage() {
           className="absolute left-[317px] top-[15px] h-[72px] w-[72px]"
         >
           <img
-            src={charImg}
+            src={characterImageUrl ?? charImg}
             alt="Character"
             className="h-full w-full object-cover"
             draggable={false}
+            onError={handleCharacterImageError}
           />
         </button>
 
