@@ -2,15 +2,22 @@ import { useNavigate } from "react-router";
 import { useAuth } from "@/context/AuthContext";
 import MobileFrameLayout from "@/components/layout/MobileFrameLayout";
 import mainBackground from "@/assets/images/main_background.jpg";
-import sunbiroLogo from "@/assets/images/sunbiro_logo.png";
+import sunbiroLogo from "@/assets/images/logo.png";
 import yeongjuCityLogo from "@/assets/images/yeongju_logo.png";
 import { useEffect } from "react";
 
-const KAKAO_CLIENT_ID = import.meta.env.VITE_KAKAO_CLIENT_ID as string | undefined;
-const REDIRECT_URI = import.meta.env.VITE_KAKAO_REDIRECT_URI as string | undefined;
+const KAKAO_CLIENT_ID = import.meta.env.VITE_KAKAO_CLIENT_ID as
+  | string
+  | undefined;
+const REDIRECT_URI = import.meta.env.VITE_KAKAO_REDIRECT_URI as
+  | string
+  | undefined;
 const KAKAO_CLIENT_ID_PLACEHOLDER = "your_kakao_client_id_here";
 
-function hasOAuthEnvValue(value: string | undefined, placeholder?: string): value is string {
+function hasOAuthEnvValue(
+  value: string | undefined,
+  placeholder?: string,
+): value is string {
   const trimmed = value?.trim();
   return Boolean(trimmed) && trimmed !== placeholder;
 }
@@ -33,7 +40,9 @@ export default function LoginPage() {
       console.error(
         "Kakao login is not configured. Set VITE_KAKAO_CLIENT_ID and VITE_KAKAO_REDIRECT_URI in .env, then restart Vite.",
       );
-      alert("Kakao login is not configured. Please check the frontend .env file.");
+      alert(
+        "Kakao login is not configured. Please check the frontend .env file.",
+      );
       return;
     }
 

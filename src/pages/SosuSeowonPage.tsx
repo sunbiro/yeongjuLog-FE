@@ -3,6 +3,8 @@ import type { FormEvent } from "react";
 import { useNavigate } from "react-router";
 
 import MobileFrameLayout from "@/components/layout/MobileFrameLayout";
+import { useAuth } from "@/context/AuthContext";
+import { api } from "@/lib/api";
 import fireImg from "@/assets/images/fire.png";
 import infoImg from "@/assets/images/info.png";
 import sosuBackground from "@/assets/images/place02_background.png";
@@ -11,15 +13,52 @@ import wrongImg from "@/assets/images/X.png";
 type ScreenMode = "story" | "quiz";
 type StoryStep = 0 | 1;
 
-const correctAnswers = ["숙수사", "宿水寺"];
+type MissionResponse = {
+  success: boolean;
+  data: Array<{
+    id: number;
+    locationName: string;
+    title: string;
+    question: string;
+    rewardPoints: number;
+    type: string;
+    isCompleted: boolean;
+  }>;
+};
+
+type SecretLetter = {
+  id: number;
+  sequenceNumber: number;
+  title: string;
+  content: string;
+  description: string;
+};
+
+type MissionSubmitResponse = {
+  success: boolean;
+  data: {
+    isCorrect: boolean;
+    message: string;
+    rewardPoints: number;
+    totalPoints: number;
+    secretLetter: SecretLetter | null;
+    isGoldShrineUnlocked: boolean;
+  };
+};
 
 export default function SosuSeowonPage() {
   const navigate = useNavigate();
+  const { user, updateUser } = useAuth();
   const wrongTimerRef = useRef<number | null>(null);
+
   const [mode, setMode] = useState<ScreenMode>("story");
   const [storyStep, setStoryStep] = useState<StoryStep>(0);
   const [answer, setAnswer] = useState("");
   const [showWrongImage, setShowWrongImage] = useState(false);
+
+  const [missionId, setMissionId] = useState<number | null>(null);
+  const [question, setQuestion] = useState<string | null>(null);
+  const [missionLoading, setMissionLoading] = useState(false);
 
   useEffect(() => {
     return () => {
@@ -29,39 +68,71 @@ export default function SosuSeowonPage() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!user?.id) return;
+    setMissionLoading(true);
+    api
+      .get<MissionResponse>(`/v1/missions/location/SOSU_SEOWON?userId=${user.id}`)
+      .then((res) => {
+        const mission = res.data?.[0];
+        if (mission) {
+          setMissionId(mission.id);
+          setQuestion(mission.question);
+        }
+      })
+      .catch((err) => {
+        console.error("미션 로딩 실패:", err);
+      })
+      .finally(() => setMissionLoading(false));
+  }, [user?.id]);
+
   const handleStoryNext = () => {
     if (storyStep === 0) {
       setStoryStep(1);
       return;
     }
-
     setMode("quiz");
   };
 
   const showWrongFeedback = () => {
     setShowWrongImage(true);
-
     if (wrongTimerRef.current !== null) {
       window.clearTimeout(wrongTimerRef.current);
     }
-
     wrongTimerRef.current = window.setTimeout(() => {
       setShowWrongImage(false);
       wrongTimerRef.current = null;
     }, 2000);
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!user?.id || missionId === null) return;
 
-    const normalizedAnswer = answer.replace(/\s/g, "");
-    if (correctAnswers.includes(normalizedAnswer)) {
-      setShowWrongImage(false);
-      navigate("/reward");
-      return;
+    try {
+      const res = await api.post<MissionSubmitResponse>("/v1/missions/submit", {
+        userId: user.id,
+        missionId,
+        answer: answer.replace(/\s/g, ""),
+      });
+
+      if (res.data?.isCorrect) {
+        setShowWrongImage(false);
+        updateUser({ ...user, points: res.data.totalPoints });
+        navigate("/reward", {
+          state: {
+            rewardPoints: res.data.rewardPoints,
+            totalPoints: res.data.totalPoints,
+            secretLetter: res.data.secretLetter ?? null,
+            isGoldShrineUnlocked: res.data.isGoldShrineUnlocked,
+          },
+        });
+      } else {
+        showWrongFeedback();
+      }
+    } catch {
+      showWrongFeedback();
     }
-
-    showWrongFeedback();
   };
 
   return (
@@ -71,6 +142,8 @@ export default function SosuSeowonPage() {
       ) : (
         <QuizScreen
           answer={answer}
+          question={question}
+          missionLoading={missionLoading}
           showWrongImage={showWrongImage}
           onAnswerChange={setAnswer}
           onBack={() => navigate("/main")}
@@ -161,6 +234,8 @@ function SecondStoryText() {
 
 type QuizScreenProps = {
   answer: string;
+  question: string | null;
+  missionLoading: boolean;
   showWrongImage: boolean;
   onAnswerChange: (answer: string) => void;
   onBack: () => void;
@@ -169,6 +244,8 @@ type QuizScreenProps = {
 
 function QuizScreen({
   answer,
+  question,
+  missionLoading,
   showWrongImage,
   onAnswerChange,
   onBack,
@@ -201,18 +278,22 @@ function QuizScreen({
 
           <form onSubmit={onSubmit} className="mt-6 flex flex-col gap-4 rounded-[10px] bg-[#461901] p-4">
             <label htmlFor="sosu-answer" className="text-sm leading-5">
-              정축지변으로 사라진 이곳의 옛 절 이름은 무엇인가?
+              {missionLoading
+                ? "미션을 불러오는 중..."
+                : (question ?? "정축지변으로 사라진 이곳의 옛 절 이름은 무엇인가?")}
             </label>
             <input
               id="sosu-answer"
               value={answer}
               onChange={(event) => onAnswerChange(event.target.value)}
               placeholder="답을 입력하시오"
-              className="h-[51px] rounded-lg border-2 border-[#bb4d00] bg-[#fffbeb] px-4 text-center text-base text-[#111111] outline-none placeholder:text-black/50 focus:ring-2 focus:ring-[#fee685]"
+              disabled={missionLoading}
+              className="h-[51px] rounded-lg border-2 border-[#bb4d00] bg-[#fffbeb] px-4 text-center text-base text-[#111111] outline-none placeholder:text-black/50 focus:ring-2 focus:ring-[#fee685] disabled:opacity-50"
             />
             <button
               type="submit"
-              className="h-12 rounded-lg bg-[#bb4d00] text-base font-bold leading-6 text-white active:scale-[0.98]"
+              disabled={missionLoading || !answer.trim()}
+              className="h-12 rounded-lg bg-[#bb4d00] text-base font-bold leading-6 text-white disabled:opacity-50 active:scale-[0.98]"
             >
               제출하기
             </button>

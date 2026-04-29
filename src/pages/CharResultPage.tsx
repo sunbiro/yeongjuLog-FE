@@ -21,19 +21,19 @@ export default function CharResultPage() {
   const { user } = useAuth();
   const [name, setName] = useState("");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const savedName = sessionStorage.getItem("charName");
     const savedImageUrl = sessionStorage.getItem("charImageUrl");
 
-    // sessionStorage에 생성된 캐릭터가 있으면 그대로 표시
     if (savedName && savedImageUrl) {
       setName(savedName);
       setImageUrl(savedImageUrl);
+      setLoading(false);
       return;
     }
 
-    // 없으면 서버에서 기존 캐릭터 조회
     if (!user) {
       navigate("/", { replace: true });
       return;
@@ -51,7 +51,8 @@ export default function CharResultPage() {
       })
       .catch(() => {
         navigate("/theme", { replace: true });
-      });
+      })
+      .finally(() => setLoading(false));
   }, [user, navigate]);
 
   const handleStart = () => {
@@ -66,8 +67,6 @@ export default function CharResultPage() {
     navigate("/char-setup");
   };
 
-  if (!imageUrl) return null;
-
   return (
     <MobileFrameLayout padded={false}>
       <div className="relative h-full w-full overflow-hidden">
@@ -79,43 +78,49 @@ export default function CharResultPage() {
         />
         <div className="absolute inset-0 bg-[#f5e9c8]/30" />
 
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 px-6">
-          <p
-            className="text-2xl font-bold tracking-widest text-[#3d1f00]"
-            style={{ textShadow: "0 1px 2px rgba(255,255,255,0.6)" }}
-          >
-            {name}
-          </p>
-
-          {/* 캐릭터 이미지 프레임 */}
-          <div className="relative w-56">
-            <img src={picFrame} alt="" className="w-full" draggable={false} />
-            <img
-              src={imageUrl}
-              alt="생성된 캐릭터"
-              className="absolute object-cover"
-              style={{ inset: "13%" }}
-            />
+        {loading ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
+            <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#c8873a] border-t-transparent" />
+            <p className="text-sm font-bold text-[#3d1f00]">캐릭터를 불러오는 중...</p>
           </div>
+        ) : (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 px-6">
+            <p
+              className="text-2xl font-bold tracking-widest text-[#3d1f00]"
+              style={{ textShadow: "0 1px 2px rgba(255,255,255,0.6)" }}
+            >
+              {name}
+            </p>
 
-          {/* 여정 시작하기 */}
-          <button
-            type="button"
-            onClick={handleStart}
-            className="mt-2 w-full max-w-[240px] rounded-lg border-2 border-[#7a4f22] bg-[#c8873a] px-10 py-3 text-base font-bold tracking-wide text-[#fff8ee] shadow-md active:scale-95 transition-transform duration-150"
-          >
-            여정 시작하기
-          </button>
+            <div className="relative w-56">
+              <img src={picFrame} alt="" className="w-full" draggable={false} />
+              {imageUrl && (
+                <img
+                  src={imageUrl}
+                  alt="생성된 캐릭터"
+                  className="absolute object-cover"
+                  style={{ inset: "13%" }}
+                />
+              )}
+            </div>
 
-          {/* 다시 만들기 */}
-          <button
-            type="button"
-            onClick={handleRedo}
-            className="w-full max-w-[240px] rounded-lg border-2 border-[#b0906a] bg-[#d9b88a] px-10 py-3 text-base font-bold tracking-wide text-[#5a3a1a] active:scale-95 transition-transform duration-150"
-          >
-            다시 만들기
-          </button>
-        </div>
+            <button
+              type="button"
+              onClick={handleStart}
+              className="mt-2 w-full max-w-[240px] rounded-lg border-2 border-[#7a4f22] bg-[#c8873a] px-10 py-3 text-base font-bold tracking-wide text-[#fff8ee] shadow-md transition-transform duration-150 active:scale-95"
+            >
+              여정 시작하기
+            </button>
+
+            <button
+              type="button"
+              onClick={handleRedo}
+              className="w-full max-w-[240px] rounded-lg border-2 border-[#b0906a] bg-[#d9b88a] px-10 py-3 text-base font-bold tracking-wide text-[#5a3a1a] transition-transform duration-150 active:scale-95"
+            >
+              다시 만들기
+            </button>
+          </div>
+        )}
       </div>
     </MobileFrameLayout>
   );

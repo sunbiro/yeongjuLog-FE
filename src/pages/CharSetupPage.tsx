@@ -23,6 +23,25 @@ const STYLE_MAP: Record<string, string> = {
   modern: "common",
 };
 
+function getMissingAuthFields(
+  accessToken: string | null,
+  userId: number | undefined,
+) {
+  const storedAccessToken = localStorage.getItem("accessToken");
+  const missing: string[] = [];
+
+  if (!accessToken) missing.push("context accessToken");
+  if (!storedAccessToken) missing.push("localStorage accessToken");
+  if (userId == null) missing.push("user.id");
+
+  return {
+    missing,
+    hasContextToken: Boolean(accessToken),
+    hasStoredToken: Boolean(storedAccessToken),
+    userId,
+  };
+}
+
 export default function CharSetupPage() {
   const navigate = useNavigate();
   const { accessToken, user } = useAuth();
@@ -37,13 +56,20 @@ export default function CharSetupPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!accessToken || !user?.id) {
+    const authDebug = getMissingAuthFields(accessToken, user?.id);
+    if (authDebug.missing.length > 0) {
       setError("로그인이 필요합니다. 다시 로그인해 주세요.");
-      navigate("/", { replace: true });
+      console.warn("Character generation auth missing:", authDebug);
+      setError(
+        `캐릭터 생성 인증 정보 누락: ${authDebug.missing.join(", ")}. 다시 로그인해주세요.`,
+      );
       return;
     }
 
     // 미리보기
+    const userId = authDebug.userId;
+    if (userId == null) return;
+
     const reader = new FileReader();
     reader.onload = (ev) => setPreview(ev.target?.result as string);
     reader.readAsDataURL(file);
@@ -59,7 +85,7 @@ export default function CharSetupPage() {
     };
 
     const form = new FormData();
-    form.append("userId", String(user.id));
+    form.append("userId", String(userId));
     form.append("photo", file);
     form.append(
       "features",
@@ -67,6 +93,11 @@ export default function CharSetupPage() {
     );
 
     try {
+      console.info("Character generation auth check:", {
+        hasContextToken: authDebug.hasContextToken,
+        hasStoredToken: authDebug.hasStoredToken,
+        userId: authDebug.userId,
+      });
       const res = await api.postForm<CharacterResponse>("/characters/generate", form);
       sessionStorage.setItem("charName", name.trim());
       sessionStorage.setItem("charTrait", trait.trim());

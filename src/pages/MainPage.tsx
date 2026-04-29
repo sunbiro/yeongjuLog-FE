@@ -30,7 +30,7 @@ type Marker = {
   left: number;
   width: number;
   height: number;
-  path: string;
+  path?: string;
 };
 
 type NavItem = {
@@ -63,7 +63,6 @@ const markers: Marker[] = [
     left: 151,
     width: 72,
     height: 61,
-    path: "/game",
   },
   {
     id: "place-02",
@@ -83,7 +82,6 @@ const markers: Marker[] = [
     left: 58,
     width: 78,
     height: 68,
-    path: "/game",
   },
   {
     id: "place-04",
@@ -93,7 +91,6 @@ const markers: Marker[] = [
     left: 297,
     width: 54,
     height: 73,
-    path: "/game",
   },
   {
     id: "place-05",
@@ -103,7 +100,6 @@ const markers: Marker[] = [
     left: 285,
     width: 54,
     height: 73,
-    path: "/game",
   },
   {
     id: "place-06",
@@ -113,7 +109,6 @@ const markers: Marker[] = [
     left: 178,
     width: 54,
     height: 72,
-    path: "/game",
   },
   {
     id: "place-07",
@@ -123,7 +118,6 @@ const markers: Marker[] = [
     left: 205,
     width: 45,
     height: 60,
-    path: "/game",
   },
   {
     id: "place-08",
@@ -133,7 +127,6 @@ const markers: Marker[] = [
     left: 322,
     width: 68,
     height: 60,
-    path: "/game",
   },
 ];
 
@@ -221,18 +214,13 @@ export default function MainPage() {
           draggable={false}
         />
 
-        <button
-          type="button"
-          onClick={() => navigate("/selection")}
-          className="absolute left-[7px] top-[26px] h-[39px] w-[139px]"
-        >
-          <img
-            src={moneyImg}
-            alt="Coins"
-            className="h-full w-full object-cover"
-            draggable={false}
-          />
-        </button>
+        {/* 포인트 표시 (클릭 불가) */}
+        <img
+          src={moneyImg}
+          alt="Coins"
+          className="absolute left-[7px] top-[26px] h-[39px] w-[139px] object-cover"
+          draggable={false}
+        />
 
         <button
           type="button"
@@ -248,27 +236,43 @@ export default function MainPage() {
           />
         </button>
 
-        {markers.map((marker) => (
-          <button
-            key={marker.id}
-            type="button"
-            onClick={() => navigate(marker.path)}
-            className="absolute transition-transform active:scale-95"
-            style={{
-              top: `${marker.top}px`,
-              left: `${marker.left}px`,
-              width: `${marker.width}px`,
-              height: `${marker.height}px`,
-            }}
-          >
+        {markers.map((marker) =>
+          marker.path ? (
+            <button
+              key={marker.id}
+              type="button"
+              onClick={() => navigate(marker.path!)}
+              className="absolute transition-transform active:scale-95"
+              style={{
+                top: `${marker.top}px`,
+                left: `${marker.left}px`,
+                width: `${marker.width}px`,
+                height: `${marker.height}px`,
+              }}
+            >
+              <img
+                src={marker.image}
+                alt={marker.alt}
+                className="h-full w-full object-cover"
+                draggable={false}
+              />
+            </button>
+          ) : (
             <img
+              key={marker.id}
               src={marker.image}
               alt={marker.alt}
-              className="h-full w-full object-cover"
+              className="absolute opacity-50"
               draggable={false}
+              style={{
+                top: `${marker.top}px`,
+                left: `${marker.left}px`,
+                width: `${marker.width}px`,
+                height: `${marker.height}px`,
+              }}
             />
-          </button>
-        ))}
+          ),
+        )}
 
         <div className="pointer-events-none absolute left-0 top-[759px] h-[107px] w-[390px] bg-[#7f441e]/70" />
         <img
