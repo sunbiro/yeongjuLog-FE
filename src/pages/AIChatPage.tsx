@@ -1,13 +1,15 @@
 import { useState, useRef, useEffect } from "react";
-import type { FormEvent } from "react";
 import { useNavigate } from "react-router";
 
 import MobileFrameLayout from "@/components/layout/MobileFrameLayout";
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
-import talkImg from "@/assets/images/talk.png";
-import chatWindowImg from "@/assets/images/찐대화창 3.png";
-import charImg from "@/assets/images/char.png";
+import fireImg from "@/assets/images/fire.png";
+import mapBackgroundImg from "@/assets/images/9eaa0e66ab063858b723b3be47acacf1ac105a4f.png";
+import dragonPatternImg from "@/assets/images/aaa41ee594cd359da8758f4984ac72212c01f098.png";
+import doorIconImg from "@/assets/images/exit.png";
+import sendBtnImg from "@/assets/images/send.png";
+import inputBgImg from "@/assets/images/chat.png";
 
 type Message = {
   id: string;
@@ -26,18 +28,83 @@ type ConversationResponse = {
   };
 };
 
+const initialMessage =
+  "안녕하시오. 나는 영주의 기억을 잇는 도깨비불이오. 영주의 역사와 문화가 궁금하면 무엇이든 물어보시오.";
+
+function AiMessage({ content }: { content: string }) {
+  return (
+    <div className="relative mr-auto w-[calc(100%-30px)] max-w-[340px] pl-[18px]">
+      <div
+        className="absolute left-[4px] top-1/2 h-0 w-0 -translate-y-1/2"
+        style={{
+          borderTop: "15px solid transparent",
+          borderBottom: "15px solid transparent",
+          borderRight: "18px solid #3d2f25",
+          filter: "drop-shadow(-2px 2px 0 rgba(0, 0, 0, 0.25))",
+        }}
+      />
+      <div
+        className="relative min-h-[66px] px-5 py-4 text-[13px] font-bold leading-[1.55] text-[#3b2514] shadow-[0_5px_0_rgba(28,18,12,0.45)]"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(255,245,222,0.96) 0%, rgba(244,225,190,0.96) 100%)",
+          border: "5px solid #3d2f25",
+          boxShadow:
+            "inset 0 0 0 2px #7c6247, inset 0 0 0 6px rgba(255,246,224,0.7), 0 5px 0 rgba(28,18,12,0.5)",
+        }}
+      >
+        <span className="pointer-events-none absolute left-[7px] top-[7px] h-5 w-5 border-l-[4px] border-t-[4px] border-[#6a523b]" />
+        <span className="pointer-events-none absolute right-[7px] top-[7px] h-5 w-5 border-r-[4px] border-t-[4px] border-[#6a523b]" />
+        <span className="pointer-events-none absolute bottom-[7px] left-[7px] h-5 w-5 border-b-[4px] border-l-[4px] border-[#6a523b]" />
+        <span className="pointer-events-none absolute bottom-[7px] right-[7px] h-5 w-5 border-b-[4px] border-r-[4px] border-[#6a523b]" />
+        <p className="relative z-10 whitespace-pre-wrap break-keep">{content}</p>
+      </div>
+    </div>
+  );
+}
+
+function UserMessage({ content }: { content: string }) {
+  return (
+    <div className="relative ml-auto w-[calc(100%-34px)] max-w-[330px] pr-[18px]">
+      <div
+        className="absolute right-[4px] top-1/2 h-0 w-0 -translate-y-1/2"
+        style={{
+          borderTop: "17px solid transparent",
+          borderBottom: "17px solid transparent",
+          borderLeft: "20px solid #7b2f2f",
+          filter: "drop-shadow(2px 2px 0 rgba(0, 0, 0, 0.28))",
+        }}
+      />
+      <div
+        className="relative min-h-[72px] px-5 py-4 text-[13px] font-bold leading-[1.55] text-[#321909] shadow-[0_5px_0_rgba(45,14,12,0.45)]"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(225,190,107,0.97) 0%, rgba(202,158,73,0.97) 100%)",
+          border: "5px solid #7b2f2f",
+          boxShadow:
+            "inset 0 0 0 2px #e5c66f, inset 0 0 0 6px rgba(120,43,36,0.28), 0 5px 0 rgba(45,14,12,0.5)",
+        }}
+      >
+        <span className="pointer-events-none absolute left-[7px] top-[7px] h-4 w-4 border-l-[4px] border-t-[4px] border-[#f4d67a]" />
+        <span className="pointer-events-none absolute right-[7px] top-[7px] h-4 w-4 border-r-[4px] border-t-[4px] border-[#f4d67a]" />
+        <span className="pointer-events-none absolute bottom-[7px] left-[7px] h-4 w-4 border-b-[4px] border-l-[4px] border-[#f4d67a]" />
+        <span className="pointer-events-none absolute bottom-[7px] right-[7px] h-4 w-4 border-b-[4px] border-r-[4px] border-[#f4d67a]" />
+        <p className="relative z-10 whitespace-pre-wrap break-keep">{content}</p>
+      </div>
+    </div>
+  );
+}
+
 export default function AIChatPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const characterImageUrl = sessionStorage.getItem("charImageUrl");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "0",
       role: "assistant",
-      content:
-        "안녕하시오! 나는 영주를 지키는 선비라오. 영주의 역사와 문화에 대해 궁금한 것이 있으면 무엇이든 물어보시오.",
+      content: initialMessage,
     },
   ]);
   const [input, setInput] = useState("");
@@ -45,10 +112,9 @@ export default function AIChatPage() {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, loading]);
 
-  const handleSend = async (e?: FormEvent) => {
-    e?.preventDefault();
+  const handleSend = async () => {
     const text = input.trim();
     if (!text || loading || !user) return;
 
@@ -78,7 +144,7 @@ export default function AIChatPage() {
         {
           id: (Date.now() + 1).toString(),
           role: "assistant",
-          content: "죄송합니다. 잠시 후 다시 시도해주세요.",
+          content: "미안하오. 지금은 대답이 어렵소. 잠시 후 다시 시도해 주시오.",
         },
       ]);
     } finally {
@@ -88,93 +154,106 @@ export default function AIChatPage() {
 
   return (
     <MobileFrameLayout padded={false}>
-      <div className="relative flex h-full w-full flex-col overflow-hidden bg-[#0d0a05]">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,#2a1500_0%,#0d0a05_70%)]" />
-
-        {/* 헤더 */}
-        <div className="relative flex items-center px-4 pt-10 pb-2">
+      <div className="relative flex h-full w-full flex-col overflow-hidden bg-[#24150d] font-inter">
+        <header className="relative z-20 flex h-[60px] shrink-0 items-center bg-[#743210] px-4 shadow-[0_3px_0_rgba(57,22,9,0.55)]">
           <button
             type="button"
             onClick={() => navigate("/main")}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-lg text-white active:scale-95"
+            className="flex h-10 w-10 items-center justify-center active:scale-95"
+            aria-label="메인으로 돌아가기"
           >
-            ←
+            <img
+              src={doorIconImg}
+              alt=""
+              className="h-[34px] w-[34px] object-contain drop-shadow-[0_2px_0_rgba(0,0,0,0.45)]"
+              draggable={false}
+            />
           </button>
-          <h1 className="flex-1 text-center text-base font-bold text-[#fee685]">AI 선비와 대화</h1>
-          <div className="h-8 w-8" />
-        </div>
+          <h1 className="flex-1 pr-10 text-center text-[21px] font-black leading-none text-[#edf0d0] drop-shadow-[0_2px_0_rgba(37,16,7,0.9)]">
+            도깨비불과 자유 대화
+          </h1>
+        </header>
 
-        {/* 캐릭터 + 말풍선 */}
-        <div className="relative flex h-[170px] shrink-0 items-end justify-center">
+        <main className="relative min-h-0 flex-1 overflow-hidden">
           <img
-            src={talkImg}
+            src={mapBackgroundImg}
             alt=""
-            className="absolute right-[55px] top-[8px] h-[65px] w-[110px] object-contain"
+            className="absolute inset-0 h-full w-full object-cover opacity-55"
             draggable={false}
           />
           <img
-            src={characterImageUrl ?? charImg}
-            alt="캐릭터"
-            className="h-[150px] w-auto object-contain"
+            src={dragonPatternImg}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover opacity-25 mix-blend-multiply"
             draggable={false}
           />
-        </div>
+          <div className="absolute inset-0 bg-[#b7aa8d]/35" />
+          <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-[#1f1713]/60 to-transparent" />
 
-        {/* 채팅창 */}
-        <div className="relative mx-4 mb-3 flex-1 overflow-hidden rounded-2xl">
           <img
-            src={chatWindowImg}
-            alt=""
-            className="pointer-events-none absolute inset-0 h-full w-full object-fill"
+            src={fireImg}
+            alt="도깨비불"
+            className="pointer-events-none absolute -left-[48px] bottom-[106px] z-10 w-[226px] object-contain drop-shadow-[0_0_13px_rgba(43,185,255,0.9)]"
             draggable={false}
           />
-          <div className="relative flex h-full flex-col gap-3 overflow-y-auto px-4 py-4">
-            {messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`flex flex-col ${msg.role === "user" ? "items-end" : "items-start"}`}
-              >
-                <div
-                  className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm leading-6 ${
-                    msg.role === "user"
-                      ? "rounded-tr-sm bg-[#bb4d00] text-white"
-                      : "rounded-tl-sm border border-[#7b3306] bg-[#2a1a0e]/90 text-[#fee685]"
-                  }`}
-                >
-                  {msg.content}
+
+          <div className="relative z-20 h-full overflow-y-auto overscroll-contain px-5 pb-5 pt-6">
+            <div className="flex min-h-full flex-col gap-5 py-3">
+              <div className="mt-auto" />
+              {messages.map((msg) => (
+                <div key={msg.id}>
+                  {msg.role === "assistant" ? (
+                    <AiMessage content={msg.content} />
+                  ) : (
+                    <UserMessage content={msg.content} />
+                  )}
+                  {msg.bonusPoints ? (
+                    <p className="mt-2 pr-6 text-right text-[12px] font-black text-[#fff0a3] drop-shadow-[0_2px_0_rgba(61,23,9,0.9)]">
+                      +{msg.bonusPoints} 포인트 획득!
+                    </p>
+                  ) : null}
                 </div>
-                {msg.bonusPoints ? (
-                  <span className="mt-1 text-[11px] font-bold text-[#fee685]">
-                    +{msg.bonusPoints} 포인트 획득!
-                  </span>
-                ) : null}
-              </div>
-            ))}
-            {loading && (
-              <div className="flex justify-start">
-                <div className="rounded-2xl rounded-tl-sm border border-[#7b3306] bg-[#2a1a0e]/90 px-4 py-2 text-sm text-[#fee685]">
-                  ···
-                </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
+              ))}
+              {loading ? <AiMessage content="생각 중이오..." /> : null}
+              <div ref={messagesEndRef} />
+            </div>
           </div>
-        </div>
+        </main>
 
-        {/* 입력창 */}
-        <form onSubmit={handleSend} className="relative flex gap-2 px-4 pb-8">
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="질문을 입력하시오..."
-            className="h-12 flex-1 rounded-xl border border-[#7b3306] bg-[#2a1a0e] px-4 text-sm text-[#fef3c6] outline-none placeholder:text-[#7b5c3a] focus:border-[#fee685]"
-          />
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            handleSend();
+          }}
+          className="relative z-30 flex h-[45px] shrink-0 items-center gap-[5px] bg-[#172036] px-[3px] pb-[7px] pt-[5px]"
+        >
+          <label className="relative h-[33px] min-w-0 flex-1" aria-label="질문 입력">
+            <img
+              src={inputBgImg}
+              alt=""
+              className="absolute inset-0 h-full w-full object-fill"
+              draggable={false}
+            />
+            <input
+              value={input}
+              onChange={(event) => setInput(event.target.value)}
+              placeholder="질문을 입력하시오"
+              className="relative z-10 h-full w-full bg-transparent px-6 pb-[2px] text-[14px] font-bold text-[#2f2217] outline-none placeholder:text-[#88705c] disabled:opacity-60"
+              disabled={loading || !user}
+            />
+          </label>
           <button
             type="submit"
-            disabled={loading || !input.trim()}
-            className="h-12 rounded-xl bg-[#bb4d00] px-5 text-sm font-bold text-white disabled:opacity-40 active:scale-95"
+            disabled={loading || !input.trim() || !user}
+            className="h-[34px] w-[62px] shrink-0 active:scale-95 disabled:opacity-55"
+            aria-label="전송"
           >
-            전송
+            <img
+              src={sendBtnImg}
+              alt=""
+              className="h-full w-full object-fill"
+              draggable={false}
+            />
           </button>
         </form>
       </div>

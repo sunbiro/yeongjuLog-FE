@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://13.209.21.116:8080";
+const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://43.201.26.149:8080";
 
 function getToken(): string | null {
   return localStorage.getItem("accessToken");

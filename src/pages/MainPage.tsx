@@ -159,7 +159,7 @@ const navItems: NavItem[] = [
     left: 265,
     width: 123,
     height: 66,
-    path: "/market",
+    path: "/food",
   },
 ];
 

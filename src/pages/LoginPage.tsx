@@ -28,7 +28,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (accessToken) {
-      navigate("/main", { replace: true });
+      navigate("/char-setup", { replace: true });
     }
   }, [accessToken, navigate]);
 

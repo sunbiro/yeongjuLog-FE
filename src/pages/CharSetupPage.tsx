@@ -1,11 +1,16 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { ChangeEvent, FormEvent } from "react";
 import { useNavigate } from "react-router";
+
 import MobileFrameLayout from "@/components/layout/MobileFrameLayout";
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
 import charBackground from "@/assets/images/char_background.png";
 import inputFrame from "@/assets/images/input.png";
 import picFrame from "@/assets/images/pic.png";
+
+type CharacterStyle = "scholar" | "royal" | "common";
+type CharacterGender = "male" | "female";
 
 type CharacterResponse = {
   success: boolean;
@@ -17,102 +22,116 @@ type CharacterResponse = {
   };
 };
 
-const STYLE_MAP: Record<string, string> = {
+const MAX_PHOTO_SIZE = 10 * 1024 * 1024;
+
+const STYLE_MAP: Record<string, CharacterStyle> = {
   geumseong: "royal",
   joseon: "scholar",
   modern: "common",
 };
 
-function getMissingAuthFields(
-  accessToken: string | null,
-  userId: number | undefined,
-) {
-  const storedAccessToken = localStorage.getItem("accessToken");
-  const missing: string[] = [];
-
-  if (!accessToken) missing.push("context accessToken");
-  if (!storedAccessToken) missing.push("localStorage accessToken");
-  if (userId == null) missing.push("user.id");
-
-  return {
-    missing,
-    hasContextToken: Boolean(accessToken),
-    hasStoredToken: Boolean(storedAccessToken),
-    userId,
-  };
+function readFileAsDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (event) => resolve(event.target?.result as string);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
 }
 
 export default function CharSetupPage() {
   const navigate = useNavigate();
-  const { accessToken, user } = useAuth();
+  const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [name, setName] = useState("");
   const [trait, setTrait] = useState("");
+  const [gender, setGender] = useState<CharacterGender>("male");
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handlePhotoCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  useEffect(() => {
+    if (!user) {
+      navigate("/", { replace: true });
+    }
+  }, [navigate, user]);
+
+  const handlePhotoChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
     if (!file) return;
 
-    const authDebug = getMissingAuthFields(accessToken, user?.id);
-    if (authDebug.missing.length > 0) {
-      setError("로그인이 필요합니다. 다시 로그인해 주세요.");
-      console.warn("Character generation auth missing:", authDebug);
-      setError(
-        `캐릭터 생성 인증 정보 누락: ${authDebug.missing.join(", ")}. 다시 로그인해주세요.`,
-      );
+    if (!file.type.startsWith("image/")) {
+      setError("이미지 파일만 업로드할 수 있습니다.");
+      event.target.value = "";
       return;
     }
 
-    // 미리보기
-    const userId = authDebug.userId;
-    if (userId == null) return;
+    if (file.size > MAX_PHOTO_SIZE) {
+      setError("사진은 최대 10MB까지 업로드할 수 있습니다.");
+      event.target.value = "";
+      return;
+    }
 
-    const reader = new FileReader();
-    reader.onload = (ev) => setPreview(ev.target?.result as string);
-    reader.readAsDataURL(file);
-
-    setLoading(true);
     setError(null);
+    setPhotoFile(file);
+    setPreview(await readFileAsDataUrl(file));
+  };
 
-    const theme = sessionStorage.getItem("selectedTheme") ?? "geumseong";
+  const handleGenerate = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!user || loading) return;
+
+    const description = trait.trim();
+    if (!description) {
+      setError("캐릭터 특징을 입력해 주세요.");
+      return;
+    }
+
+    if (!photoFile) {
+      setError("캐릭터로 만들 얼굴 사진을 선택해 주세요.");
+      return;
+    }
+
+    const selectedTheme = sessionStorage.getItem("selectedTheme") ?? "joseon";
     const features = {
-      description: trait.trim() || "기본 캐릭터",
-      gender: "male",
-      style: STYLE_MAP[theme] ?? "scholar",
+      description,
+      gender,
+      style: STYLE_MAP[selectedTheme] ?? "scholar",
     };
 
-    const form = new FormData();
-    form.append("userId", String(userId));
-    form.append("photo", file);
-    form.append(
+    const formData = new FormData();
+    formData.append("photo", photoFile);
+    formData.append(
       "features",
-      new Blob([JSON.stringify(features)], { type: "application/json" })
+      new Blob([JSON.stringify(features)], { type: "application/json" }),
     );
 
     try {
-      console.info("Character generation auth check:", {
-        hasContextToken: authDebug.hasContextToken,
-        hasStoredToken: authDebug.hasStoredToken,
-        userId: authDebug.userId,
-      });
-      const res = await api.postForm<CharacterResponse>("/characters/generate", form);
-      sessionStorage.setItem("charName", name.trim());
-      sessionStorage.setItem("charTrait", trait.trim());
+      setLoading(true);
+      setError(null);
+
+      const res = await api.postForm<CharacterResponse>(
+        `/characters/generate?userId=${user.id}`,
+        formData,
+      );
+
+      sessionStorage.setItem("charName", name.trim() || user.nickname || "캐릭터");
+      sessionStorage.setItem("charTrait", description);
+      sessionStorage.setItem("charGender", gender);
+      sessionStorage.setItem("charStyle", features.style);
       sessionStorage.setItem("charImageUrl", res.data.imageUrl);
       sessionStorage.setItem("characterId", String(res.data.characterId));
+      sessionStorage.setItem("characterCreatedAt", res.data.createdAt);
       navigate("/char-result");
     } catch (err) {
-      console.error(err);
       const message =
         err instanceof Error
           ? err.message
           : "캐릭터 생성에 실패했습니다. 다시 시도해 주세요.";
-      setError("캐릭터 생성에 실패했습니다. 다시 시도해주세요.");
-      setLoading(false);
       setError(message);
+      setLoading(false);
     }
   };
 
@@ -127,7 +146,10 @@ export default function CharSetupPage() {
         />
         <div className="absolute inset-0 bg-[#f5e9c8]/30" />
 
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-5 px-6">
+        <form
+          onSubmit={handleGenerate}
+          className="absolute inset-0 flex flex-col items-center justify-center gap-5 px-6"
+        >
           <p
             className="mb-2 text-2xl font-bold tracking-widest text-[#3d1f00]"
             style={{ textShadow: "0 1px 2px rgba(255,255,255,0.6)" }}
@@ -135,48 +157,62 @@ export default function CharSetupPage() {
             캐릭터 설정
           </p>
 
-          {/* 이름 입력 */}
-          <div className="relative w-full">
+          <label className="relative w-full">
             <img src={inputFrame} alt="" className="w-full" draggable={false} />
             <input
               type="text"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(event) => setName(event.target.value)}
               placeholder="이름을 입력해주세요"
               maxLength={12}
               disabled={loading}
-              className="absolute inset-0 w-full bg-transparent text-center text-base text-transparent placeholder:text-[#a07850] focus:outline-none disabled:opacity-50"
-              style={{ paddingLeft: "14%", paddingRight: "14%", paddingTop: "14%", paddingBottom: "14%", caretColor: "#3d1f00" }}
+              className="absolute inset-[18%_14%] bg-transparent text-center text-base font-bold text-[#3d1f00] placeholder:text-[#a07850] focus:outline-none disabled:opacity-50"
             />
-          </div>
+          </label>
 
-          {/* 특징 입력 */}
-          <div className="relative w-full">
+          <label className="relative w-full">
             <img src={inputFrame} alt="" className="w-full" draggable={false} />
             <input
               type="text"
               value={trait}
-              onChange={(e) => setTrait(e.target.value)}
-              placeholder="캐릭터의 특징을 입력해주세요"
-              maxLength={30}
+              onChange={(event) => setTrait(event.target.value)}
+              placeholder="예: 웃는 표정, 안경"
+              maxLength={40}
               disabled={loading}
-              className="absolute inset-0 w-full bg-transparent text-center text-base text-transparent placeholder:text-[#a07850] focus:outline-none disabled:opacity-50"
-              style={{ paddingLeft: "14%", paddingRight: "14%", paddingTop: "14%", paddingBottom: "14%", caretColor: "#3d1f00" }}
+              className="absolute inset-[18%_14%] bg-transparent text-center text-base font-bold text-[#3d1f00] placeholder:text-[#a07850] focus:outline-none disabled:opacity-50"
             />
+          </label>
+
+          <div className="grid w-full grid-cols-2 gap-3">
+            {(["male", "female"] as const).map((value) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setGender(value)}
+                disabled={loading}
+                className={[
+                  "rounded-md border-2 px-4 py-2 text-sm font-black shadow-[0_3px_0_rgba(70,39,20,0.35)] active:scale-95 disabled:opacity-50",
+                  gender === value
+                    ? "border-[#4d2c16] bg-[#9f5b27] text-[#fff8df]"
+                    : "border-[#8d6236] bg-[#ead4a8] text-[#5a351d]",
+                ].join(" ")}
+              >
+                {value === "male" ? "남성" : "여성"}
+              </button>
+            ))}
           </div>
 
-          {/* 사진 촬영 */}
           <button
             type="button"
             onClick={() => !loading && fileInputRef.current?.click()}
-            className="relative w-48 cursor-pointer active:scale-95 transition-transform duration-150 disabled:opacity-50"
+            className="relative w-48 cursor-pointer transition-transform duration-150 active:scale-95 disabled:opacity-50"
             disabled={loading}
           >
-            <img src={picFrame} alt="사진 촬영" className="w-full" draggable={false} />
+            <img src={picFrame} alt="사진 선택" className="w-full" draggable={false} />
             {preview ? (
               <img
                 src={preview}
-                alt="촬영된 사진"
+                alt="선택한 사진"
                 className="absolute object-cover"
                 style={{ inset: "13%" }}
               />
@@ -185,8 +221,10 @@ export default function CharSetupPage() {
                 className="absolute flex flex-col items-center justify-center gap-1"
                 style={{ inset: "13%" }}
               >
-                <span className="text-4xl">📷</span>
-                <span className="text-xs text-[#7a5230] font-medium">사진 촬영</span>
+                <span className="text-4xl" aria-hidden="true">
+                  📷
+                </span>
+                <span className="text-xs font-medium text-[#7a5230]">사진 선택</span>
               </div>
             )}
           </button>
@@ -197,21 +235,34 @@ export default function CharSetupPage() {
             accept="image/*"
             capture="user"
             className="hidden"
-            onChange={handlePhotoCapture}
+            onChange={handlePhotoChange}
           />
 
-          {error && (
-            <p className="text-sm font-medium text-red-600 text-center">{error}</p>
-          )}
-        </div>
+          <button
+            type="submit"
+            disabled={loading || !trait.trim() || !photoFile}
+            className="w-full max-w-[240px] rounded-lg border-2 border-[#7a4f22] bg-[#c8873a] px-8 py-3 text-base font-bold tracking-wide text-[#fff8ee] shadow-md transition-transform duration-150 active:scale-95 disabled:opacity-50"
+          >
+            캐릭터 생성
+          </button>
 
-        {/* 로딩 오버레이 */}
-        {loading && (
-          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 bg-black/50">
+          {error ? (
+            <p className="max-w-[310px] text-center text-sm font-bold text-red-700">
+              {error}
+            </p>
+          ) : null}
+        </form>
+
+        {loading ? (
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 bg-black/55 px-8 text-center">
             <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#c8873a] border-t-transparent" />
-            <p className="text-sm font-bold text-[#fff8ee]">캐릭터를 생성하고 있습니다...</p>
+            <p className="text-sm font-bold leading-6 text-[#fff8ee]">
+              도트 캐릭터를 생성하고 있습니다.
+              <br />
+              보통 15~30초 정도 걸립니다.
+            </p>
           </div>
-        )}
+        ) : null}
       </div>
     </MobileFrameLayout>
   );

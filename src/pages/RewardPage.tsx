@@ -103,7 +103,7 @@ export default function RewardPage() {
 
           <button
             type="button"
-            onClick={() => navigate("/inventory")}
+            onClick={() => navigate("/ai-chat")}
             className="mt-1 h-[86px] w-[258px] transition-transform active:scale-[0.98]"
             aria-label="리워드 수령"
           >

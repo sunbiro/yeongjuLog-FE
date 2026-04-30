@@ -15,6 +15,7 @@ type LoginResponse = {
 };
 
 const pendingLoginRequests = new Map<string, Promise<LoginResponse>>();
+const USED_CODE_STORAGE_PREFIX = "kakao_oauth_code_used:";
 
 function getKakaoLoginRequest(code: string, redirectUri: string) {
   const existingRequest = pendingLoginRequests.get(code);
@@ -51,13 +52,37 @@ export default function KakaoCallbackPage() {
     if (called.current) return;
     called.current = true;
 
-    const code = new URLSearchParams(window.location.search).get("code");
+    const searchParams = new URLSearchParams(window.location.search);
+    const kakaoError = searchParams.get("error");
+    const kakaoErrorDescription = searchParams.get("error_description");
+    if (kakaoError) {
+      setError(
+        kakaoErrorDescription
+          ? `${kakaoError}: ${kakaoErrorDescription}`
+          : kakaoError,
+      );
+      return;
+    }
+
+    const code = searchParams.get("code");
     if (!code) {
       setError("Missing Kakao authorization code. Please start login again.");
       return;
     }
 
     const redirectUri = import.meta.env.VITE_KAKAO_REDIRECT_URI as string;
+    if (!redirectUri) {
+      setError("Missing VITE_KAKAO_REDIRECT_URI. Please check the frontend .env file.");
+      return;
+    }
+
+    const usedCodeStorageKey = `${USED_CODE_STORAGE_PREFIX}${code}`;
+    if (sessionStorage.getItem(usedCodeStorageKey)) {
+      setError("This Kakao authorization code was already used. Please start login again.");
+      return;
+    }
+    window.history.replaceState(null, "", window.location.pathname);
+
     const { request, reused } = getKakaoLoginRequest(code, redirectUri);
 
     setStatus(
@@ -69,6 +94,7 @@ export default function KakaoCallbackPage() {
     withTimeout(request, 20000)
       .then((res) => {
         const { accessToken, refreshToken, user } = res.data;
+        sessionStorage.setItem(usedCodeStorageKey, "true");
         login(accessToken, refreshToken, user);
         setStatus("Login succeeded. Moving to theme selection...");
         navigate("/theme", { replace: true });

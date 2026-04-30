@@ -16,7 +16,8 @@ type StoryStep = 0 | 1;
 type MissionResponse = {
   success: boolean;
   data: Array<{
-    id: number;
+    id?: number | string;
+    missionId?: number | string;
     locationName: string;
     title: string;
     question: string;
@@ -59,6 +60,7 @@ export default function SosuSeowonPage() {
   const [missionId, setMissionId] = useState<number | null>(null);
   const [question, setQuestion] = useState<string | null>(null);
   const [missionLoading, setMissionLoading] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
 
   useEffect(() => {
     return () => {
@@ -69,16 +71,23 @@ export default function SosuSeowonPage() {
   }, []);
 
   useEffect(() => {
-    if (!user?.id) return;
+    if (user?.id == null) return;
     setMissionLoading(true);
     api
       .get<MissionResponse>(`/v1/missions/location/SOSU_SEOWON?userId=${user.id}`)
       .then((res) => {
         const mission = res.data?.[0];
-        if (mission) {
-          setMissionId(mission.id);
-          setQuestion(mission.question);
+        const loadedId = mission?.id ?? mission?.missionId;
+        const loadedMissionId = loadedId != null ? Number(loadedId) : null;
+
+        if (loadedMissionId === null || !Number.isFinite(loadedMissionId)) {
+          console.error("미션 ID를 찾을 수 없습니다:", mission);
+          return;
         }
+
+        setMissionId(loadedMissionId);
+        setQuestion(mission?.question ?? null);
+        setIsCompleted(mission?.isCompleted ?? false);
       })
       .catch((err) => {
         console.error("미션 로딩 실패:", err);
@@ -107,17 +116,37 @@ export default function SosuSeowonPage() {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!user?.id || missionId === null) return;
+    const numericUserId = Number(user?.id);
+
+    if (!user || !Number.isFinite(numericUserId) || missionId === null) {
+      console.error("미션 제출 필수값 누락:", { userId: user?.id, missionId });
+      showWrongFeedback();
+      return;
+    }
+
+    if (isCompleted) {
+      navigate("/reward");
+      return;
+    }
+
+    const submitAnswer = answer.trim();
+    if (!submitAnswer) {
+      showWrongFeedback();
+      return;
+    }
+
+    const payload = {
+      userId: numericUserId,
+      missionId,
+      answer: submitAnswer,
+    };
 
     try {
-      const res = await api.post<MissionSubmitResponse>("/v1/missions/submit", {
-        userId: user.id,
-        missionId,
-        answer: answer.replace(/\s/g, ""),
-      });
+      const res = await api.post<MissionSubmitResponse>("/v1/missions/submit", payload);
 
       if (res.data?.isCorrect) {
         setShowWrongImage(false);
+        setIsCompleted(true);
         updateUser({ ...user, points: res.data.totalPoints });
         navigate("/reward", {
           state: {
@@ -130,8 +159,13 @@ export default function SosuSeowonPage() {
       } else {
         showWrongFeedback();
       }
-    } catch {
-      showWrongFeedback();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "";
+      if (msg.includes("M002")) {
+        navigate("/reward");
+      } else {
+        showWrongFeedback();
+      }
     }
   };
 
@@ -142,11 +176,12 @@ export default function SosuSeowonPage() {
       ) : (
         <QuizScreen
           answer={answer}
+          missionId={missionId}
           question={question}
           missionLoading={missionLoading}
           showWrongImage={showWrongImage}
           onAnswerChange={setAnswer}
-          onBack={() => navigate("/main")}
+          onBack={() => navigate("/reward")}
           onSubmit={handleSubmit}
         />
       )}
@@ -234,6 +269,7 @@ function SecondStoryText() {
 
 type QuizScreenProps = {
   answer: string;
+  missionId: number | null;
   question: string | null;
   missionLoading: boolean;
   showWrongImage: boolean;
@@ -244,6 +280,7 @@ type QuizScreenProps = {
 
 function QuizScreen({
   answer,
+  missionId,
   question,
   missionLoading,
   showWrongImage,
@@ -292,7 +329,7 @@ function QuizScreen({
             />
             <button
               type="submit"
-              disabled={missionLoading || !answer.trim()}
+              disabled={missionLoading || !Number.isFinite(Number(missionId)) || !answer.trim()}
               className="h-12 rounded-lg bg-[#bb4d00] text-base font-bold leading-6 text-white disabled:opacity-50 active:scale-[0.98]"
             >
               제출하기

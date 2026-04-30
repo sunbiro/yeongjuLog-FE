@@ -19,7 +19,7 @@ export default function ThemeSelectPage() {
 
   const handleSelect = (id: ThemeKey) => {
     sessionStorage.setItem("selectedTheme", id);
-    navigate("/char-setup");
+    navigate("/main");
   };
 
   return (
