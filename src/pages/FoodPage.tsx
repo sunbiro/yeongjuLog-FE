@@ -44,6 +44,16 @@ type GpsState =
   | { status: "error"; message: string }
   | { status: "ready"; latitude: number; longitude: number };
 
+// TODO: 테스트용 하드코딩 좌표 — 실서비스 전 navigator.geolocation 으로 되돌릴 것
+const TEST_LOCATIONS = {
+  영주시내: { latitude: 36.8057, longitude: 128.6235 },
+  소수서원: { latitude: 36.8742, longitude: 128.6492 },
+  부석사:   { latitude: 36.9524, longitude: 128.7268 },
+  무섬마을: { latitude: 36.7783, longitude: 128.6872 },
+} as const;
+
+const TEST_LOCATION = TEST_LOCATIONS.영주시내;
+
 export default function FoodPage() {
   const navigate = useNavigate();
 
@@ -53,25 +63,7 @@ export default function FoodPage() {
   const [dataLoading, setDataLoading] = useState(false);
 
   useEffect(() => {
-    if (!navigator.geolocation) {
-      setGps({ status: "error", message: "이 기기에서는 위치 서비스를 사용할 수 없습니다." });
-      return;
-    }
-
-    setGps({ status: "loading" });
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setGps({
-          status: "ready",
-          latitude: pos.coords.latitude,
-          longitude: pos.coords.longitude,
-        });
-      },
-      () => {
-        setGps({ status: "error", message: "위치 권한이 거부되었습니다. 브라우저 설정에서 위치 권한을 허용해주세요." });
-      },
-      { timeout: 10000 },
-    );
+    setGps({ status: "ready", ...TEST_LOCATION });
   }, []);
 
   useEffect(() => {

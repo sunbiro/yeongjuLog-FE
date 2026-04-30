@@ -131,7 +131,7 @@ export default function InventoryPage() {
         </div>
 
         {/* 카드 목록 (수평 스크롤) */}
-        <div className="absolute left-0 top-[90px] flex w-full gap-3 overflow-x-auto px-4 pb-2">
+        <div className="absolute left-6 top-[250px] flex w-full gap-3 overflow-x-auto px-4 pb-2">
           {loading ? (
             <p className="text-sm text-[#7b3306]">불러오는 중...</p>
           ) : letters.length === 0 ? (
@@ -149,7 +149,7 @@ export default function InventoryPage() {
                 <img
                   src={relicCardImg}
                   alt={ul.secretLetter.title}
-                  className="h-[78px] w-[78px] object-cover"
+                  className="h-[60px] w-[60px] object-cover"
                   draggable={false}
                 />
                 <span className="absolute bottom-0 left-0 right-0 rounded-b-md bg-black/50 py-0.5 text-center text-[9px] text-white">
@@ -161,7 +161,7 @@ export default function InventoryPage() {
         </div>
 
         {/* 선택된 밀서 조각 상세 */}
-        <div className="absolute left-[16px] top-[200px] h-[530px] w-[358px] overflow-y-auto rounded-xl bg-[#fffbeb]/80 p-5">
+        <div className="absolute left-[17px] top-[490px] h-[230px] w-[358px] overflow-y-auto rounded-xl bg-[#fffbeb]/0 p-5">
           {selected ? (
             <>
               <p className="text-[18px] font-bold leading-7 tracking-[1px] text-[#3d1f00]">

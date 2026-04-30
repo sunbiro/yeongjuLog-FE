@@ -121,13 +121,17 @@ export default function CharResultPage() {
             </p>
 
             <div className="relative w-56">
-              <img src={picFrame} alt="" className="w-full" draggable={false} />
-              <img
-                src={character.imageUrl}
-                alt="생성된 캐릭터"
-                className="absolute object-cover"
-                style={{ inset: "13%" }}
-              />
+              <div
+                className="absolute left-1/2 -translate-x-1/2 overflow-hidden"
+                style={{ top: "18%", width: "140px", height: "138px" }}
+              >
+                <img
+                  src={character.imageUrl}
+                  alt="생성된 캐릭터"
+                  className="h-full w-full object-cover"
+                />
+              </div>
+              <img src={picFrame} alt="" className="relative w-full" draggable={false} />
             </div>
 
             <button

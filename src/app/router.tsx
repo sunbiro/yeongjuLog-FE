@@ -9,6 +9,9 @@ import InventoryPage from "@/pages/InventoryPage";
 import MarketPage from "@/pages/MarketPage";
 import RewardPage from "@/pages/RewardPage";
 import SosuSeowonPage from "@/pages/SosuSeowonPage";
+import SosuSeowonQuizPage from "@/pages/SosuSeowonQuizPage";
+import MuseumPage from "@/pages/MuseumPage";
+import MuseumQuizPage from "@/pages/MuseumQuizPage";
 import AIChatPage from "@/pages/AIChatPage";
 import FoodPage from "@/pages/FoodPage";
 
@@ -20,6 +23,9 @@ export const router = createBrowserRouter([
   { path: "/char-result", element: <CharResultPage /> },
   { path: "/main", element: <MainPage /> },
   { path: "/sosu-seowon", element: <SosuSeowonPage /> },
+  { path: "/sosu-seowon-quiz", element: <SosuSeowonQuizPage /> },
+  { path: "/museum", element: <MuseumPage /> },
+  { path: "/museum-quiz", element: <MuseumQuizPage /> },
   { path: "/reward", element: <RewardPage /> },
   { path: "/inventory", element: <InventoryPage /> },
   { path: "/market", element: <MarketPage /> },

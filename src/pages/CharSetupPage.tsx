@@ -208,25 +208,24 @@ export default function CharSetupPage() {
             className="relative w-48 cursor-pointer transition-transform duration-150 active:scale-95 disabled:opacity-50"
             disabled={loading}
           >
-            <img src={picFrame} alt="사진 선택" className="w-full" draggable={false} />
-            {preview ? (
-              <img
-                src={preview}
-                alt="선택한 사진"
-                className="absolute object-cover"
-                style={{ inset: "13%" }}
-              />
-            ) : (
-              <div
-                className="absolute flex flex-col items-center justify-center gap-1"
-                style={{ inset: "13%" }}
-              >
-                <span className="text-4xl" aria-hidden="true">
-                  📷
-                </span>
-                <span className="text-xs font-medium text-[#7a5230]">사진 선택</span>
-              </div>
-            )}
+            <div
+              className="absolute left-1/2 -translate-x-1/2 overflow-hidden"
+              style={{ top: "18%", width: "120px", height: "118px" }}
+            >
+              {preview ? (
+                <img
+                  src={preview}
+                  alt="선택한 사진"
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-full w-full flex-col items-center justify-center gap-1">
+                  <span className="text-4xl" aria-hidden="true">📷</span>
+                  <span className="text-xs font-medium text-[#7a5230]">사진 선택</span>
+                </div>
+              )}
+            </div>
+            <img src={picFrame} alt="사진 선택" className="relative w-full" draggable={false} />
           </button>
 
           <input

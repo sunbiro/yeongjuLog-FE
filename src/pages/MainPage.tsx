@@ -100,6 +100,7 @@ const markers: Marker[] = [
     left: 285,
     width: 54,
     height: 73,
+    path: "/food",
   },
   {
     id: "place-06",
@@ -109,6 +110,7 @@ const markers: Marker[] = [
     left: 178,
     width: 54,
     height: 72,
+    path: "/museum",
   },
   {
     id: "place-07",
@@ -159,7 +161,7 @@ const navItems: NavItem[] = [
     left: 265,
     width: 123,
     height: 66,
-    path: "/food",
+    path: "/market",
   },
 ];
 
@@ -225,15 +227,27 @@ export default function MainPage() {
         <button
           type="button"
           onClick={() => navigate("/theme")}
-          className="absolute left-[317px] top-[15px] h-[72px] w-[72px]"
+          className="absolute left-[317px] top-[15px] flex h-[72px] w-[72px] items-center justify-center"
         >
-          <img
-            src={characterImageUrl ?? charImg}
-            alt="Character"
-            className="h-full w-full object-cover"
-            draggable={false}
-            onError={handleCharacterImageError}
-          />
+          <div className="relative flex h-[75px] w-[75px] items-center justify-center">
+            {characterImageUrl && (
+              <div className="absolute h-[45px] w-[45px] overflow-hidden">
+                <img
+                  src={characterImageUrl}
+                  alt="Character"
+                  className="h-full w-full object-cover"
+                  draggable={false}
+                  onError={handleCharacterImageError}
+                />
+              </div>
+            )}
+            <img
+              src={charImg}
+              alt=""
+              className="relative h-full w-full object-contain"
+              draggable={false}
+            />
+          </div>
         </button>
 
         {markers.map((marker) =>

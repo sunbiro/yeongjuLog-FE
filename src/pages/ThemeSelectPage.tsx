@@ -2,9 +2,9 @@ import { useNavigate } from "react-router";
 
 import MobileFrameLayout from "@/components/layout/MobileFrameLayout";
 import mainBackground from "@/assets/images/main_background.jpg";
-import theme01Img from "@/assets/images/Theme01.png";
-import theme02Img from "@/assets/images/Theme02.png";
-import theme03Img from "@/assets/images/Theme03.png";
+import theme01Img from "@/assets/images/theme01.jpg";
+import theme02Img from "@/assets/images/theme02.jpg";
+import theme03Img from "@/assets/images/theme03.jpg";
 
 type ThemeKey = "geumseong" | "joseon" | "modern";
 
@@ -19,7 +19,7 @@ export default function ThemeSelectPage() {
 
   const handleSelect = (id: ThemeKey) => {
     sessionStorage.setItem("selectedTheme", id);
-    navigate("/main");
+    navigate("/char-setup");
   };
 
   return (
@@ -34,7 +34,7 @@ export default function ThemeSelectPage() {
 
         <div className="absolute inset-0 bg-[#183b76]/20" />
 
-        <div className="absolute left-[25px] top-[70px] flex w-[340px] flex-col items-start gap-3.5 sm:w-[380px]">
+        <div className="absolute inset-x-0 top-[176px] flex flex-col items-center gap-3.5 px-6">
           {themes.map(({ id, image, enabled, alt }) => (
             <button
               key={id}
@@ -42,14 +42,14 @@ export default function ThemeSelectPage() {
               disabled={!enabled}
               onClick={() => enabled && handleSelect(id)}
               className={[
-                "relative self-stretch overflow-hidden transition-transform duration-200",
+                "relative w-full transition-transform duration-200",
                 enabled ? "cursor-pointer active:scale-[0.985]" : "cursor-not-allowed opacity-90",
               ].join(" ")}
             >
               <img
                 src={image}
                 alt={alt}
-                className="block w-full object-cover"
+                className="block w-full"
                 draggable={false}
               />
             </button>
