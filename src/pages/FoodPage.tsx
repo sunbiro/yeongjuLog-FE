@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 
 import MobileFrameLayout from "@/components/layout/MobileFrameLayout";
+import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
 import foodImg from "@/assets/images/food.jpg";
 import foodcharImg from "@/assets/images/foodchar.png";
@@ -56,6 +57,7 @@ const TEST_LOCATION = TEST_LOCATIONS.영주시내;
 
 export default function FoodPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [gps, setGps] = useState<GpsState>({ status: "idle" });
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
@@ -77,6 +79,7 @@ export default function FoodPage() {
         `/v1/restaurants/nearby?latitude=${latitude}&longitude=${longitude}&radiusKm=3.0&limit=20`,
       ),
       api.post<FoodRecommendResponse>("/v1/conversations/recommend-food", {
+        userId: user?.id,
         latitude,
         longitude,
         message: "주변 영주 맛집을 추천해주세요",

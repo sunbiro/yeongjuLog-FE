@@ -11,6 +11,20 @@ import wrongImg from "@/assets/images/X.png";
 
 const MUSEUM_LOCATION_CODE = "SOSU_MUSEUM";
 
+type Artifact = {
+  artifactNumber: number;
+  name: string;
+  period: string;
+  material: string;
+  designation: string | null;
+  designationNumber: number;
+};
+
+type ArtifactsResponse = {
+  success: boolean;
+  data: Artifact[];
+};
+
 type MissionResponse = {
   success: boolean;
   data: Array<{
@@ -50,11 +64,13 @@ export default function MuseumQuizPage() {
   const { user, updateUser } = useAuth();
   const wrongTimerRef = useRef<number | null>(null);
 
-  const [answer, setAnswer] = useState("");
+  const [selectedNumber, setSelectedNumber] = useState<number | null>(null);
   const [showWrongImage, setShowWrongImage] = useState(false);
   const [missionId, setMissionId] = useState<number | null>(null);
   const [missionLoading, setMissionLoading] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [artifacts, setArtifacts] = useState<Artifact[]>([]);
+  const [artifactsLoading, setArtifactsLoading] = useState(false);
 
   useEffect(() => {
     return () => {
@@ -88,6 +104,17 @@ export default function MuseumQuizPage() {
       .finally(() => setMissionLoading(false));
   }, [user?.id]);
 
+  useEffect(() => {
+    setArtifactsLoading(true);
+    api
+      .get<ArtifactsResponse>("/v1/museum/artifacts")
+      .then((res) => {
+        if (res.data) setArtifacts(res.data);
+      })
+      .catch((err) => console.error("소장품 로딩 실패:", err))
+      .finally(() => setArtifactsLoading(false));
+  }, []);
+
   const showWrongFeedback = () => {
     setShowWrongImage(true);
     if (wrongTimerRef.current !== null) {
@@ -114,8 +141,7 @@ export default function MuseumQuizPage() {
       return;
     }
 
-    const submitAnswer = answer.trim();
-    if (!submitAnswer) {
+    if (selectedNumber === null) {
       showWrongFeedback();
       return;
     }
@@ -124,7 +150,7 @@ export default function MuseumQuizPage() {
       const res = await api.post<MissionSubmitResponse>("/v1/missions/submit", {
         userId: numericUserId,
         missionId,
-        answer: submitAnswer,
+        answer: String(selectedNumber),
       });
 
       if (res.data?.isCorrect) {
@@ -172,20 +198,41 @@ export default function MuseumQuizPage() {
           />
 
           <form onSubmit={handleSubmit} className="absolute left-[70px] top-[172px] flex w-[290px] flex-col">
-            <p className="ml-[5px] h-[29px] text-[14px] font-black leading-[19px] text-[#f7e8c7]">
+            <p className="ml-[5px] text-[13px] font-black leading-[18px] text-[#f7e8c7]">
               금성대군의 행적을 기록한 이 문헌, 금성대군실기의 소수박물관 소장품 번호는 무엇인가?
             </p>
-            <input
-              value={answer} 
-              onChange={(event) => setAnswer(event.target.value)}
-              placeholder="답을 입력하세요"
-              disabled={missionLoading}
-              className=" mt-[8px] h-[44px] rounded-[7px] border-2 border-[#9e6f3d] bg-[#fff3d6] px-4 text-[15px] font-bold text-[#2f1c0d] outline-none placeholder:text-[#a08a6b] focus:border-[#d06a1c] disabled:opacity-50"
-            />
+
+            {/* 소장품 선택 목록 */}
+            <div className="mt-[8px] max-h-[160px] overflow-y-auto flex flex-col gap-[5px] pr-[2px]">
+              {artifactsLoading || missionLoading ? (
+                <div className="flex items-center gap-2 py-2">
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#b55318] border-t-transparent" />
+                  <p className="text-[12px] text-[#f7e8c7]/70">소장품 불러오는 중...</p>
+                </div>
+              ) : (
+                artifacts.map((artifact) => (
+                  <button
+                    key={artifact.artifactNumber}
+                    type="button"
+                    onClick={() => setSelectedNumber(artifact.artifactNumber)}
+                    className={[
+                      "w-full rounded-[6px] border-2 px-3 py-[6px] text-left text-[12px] font-bold transition-colors",
+                      selectedNumber === artifact.artifactNumber
+                        ? "border-[#d06a1c] bg-[#b55318] text-white"
+                        : "border-[#9e6f3d] bg-[#fff3d6] text-[#2f1c0d]",
+                    ].join(" ")}
+                  >
+                    <span className="opacity-70">{artifact.artifactNumber}번</span>{" "}
+                    {artifact.name}
+                  </button>
+                ))
+              )}
+            </div>
+
             <button
               type="submit"
-              disabled={missionLoading || !Number.isFinite(Number(missionId)) || !answer.trim()}
-              className="mt-[9px] h-[45px] rounded-[7px] bg-[#b55318] text-[16px] font-black text-white shadow-[inset_0_-3px_0_rgba(94,34,10,0.35)] active:scale-[0.98]"
+              disabled={missionLoading || artifactsLoading || !Number.isFinite(Number(missionId)) || selectedNumber === null}
+              className="mt-[9px] h-[45px] rounded-[7px] bg-[#b55318] text-[16px] font-black text-white shadow-[inset_0_-3px_0_rgba(94,34,10,0.35)] active:scale-[0.98] disabled:opacity-50"
             >
               제출하기
             </button>
