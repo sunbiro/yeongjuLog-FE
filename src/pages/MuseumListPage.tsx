@@ -19,6 +19,7 @@ type ArtifactCard = {
   top: number;
   labelTop: number;
   labelLeft?: number;
+  imageScale?: number;
 };
 
 const artifactCards: ArtifactCard[] = [
@@ -57,6 +58,7 @@ const artifactCards: ArtifactCard[] = [
     title: "주세붕초상(3)",
     top: 1133,
     labelTop: 1119,
+    imageScale: 1.5,
   },
 ];
 
@@ -151,6 +153,7 @@ export default function MuseumListPage() {
                   src={card.image}
                   alt={card.title}
                   className="h-full w-full object-contain"
+                  style={{ transform: `scale(${card.imageScale ?? 1})` }}
                   draggable={false}
                 />
               </div>
