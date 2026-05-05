@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 
 import MobileFrameLayout from "@/components/layout/MobileFrameLayout";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth, type User } from "@/context/AuthContext";
 import { ApiError, api } from "@/lib/api";
 import backgroundMain from "@/assets/images/background_main.png";
 import mainBackground from "@/assets/images/main_background.jpg";
@@ -56,13 +56,15 @@ type CharacterResponse = {
 
 type AuthMeResponse = {
   success?: boolean;
-  data?: {
+  data?: Partial<User> & {
     totalPoint?: number;
     points?: number;
   };
   totalPoint?: number;
   points?: number;
 };
+
+const TAVERN_POPUP_PREFIX = "tavernGuidePopupSeen";
 
 const markers: Marker[] = [
   {
@@ -183,6 +185,7 @@ export default function MainPage() {
   );
   const [failedCharacterImageUrl, setFailedCharacterImageUrl] = useState<string | null>(null);
   const [totalPoint, setTotalPoint] = useState<number | null>(() => user?.points ?? null);
+  const [showTavernPopup, setShowTavernPopup] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -191,11 +194,33 @@ export default function MainPage() {
       .get<AuthMeResponse>("/v1/auth/me")
       .then((res) => {
         const nextTotalPoint = res.data?.totalPoint ?? res.data?.points ?? res.totalPoint ?? res.points;
-        if (typeof nextTotalPoint !== "number") return;
+        const latestUser =
+          res.data?.id != null
+            ? ({
+                ...user,
+                ...res.data,
+                id: Number(res.data.id),
+                points: typeof nextTotalPoint === "number" ? nextTotalPoint : user.points,
+                secretLetterCount: res.data.secretLetterCount ?? user.secretLetterCount,
+                isGoldShrineUnlocked: res.data.isGoldShrineUnlocked ?? user.isGoldShrineUnlocked,
+              } as User)
+            : user;
 
-        setTotalPoint(nextTotalPoint);
-        if (user.points !== nextTotalPoint) {
-          updateUser({ ...user, points: nextTotalPoint });
+        if (typeof nextTotalPoint === "number") {
+          setTotalPoint(nextTotalPoint);
+        }
+
+        if (
+          latestUser.points !== user.points ||
+          latestUser.secretLetterCount !== user.secretLetterCount ||
+          latestUser.isGoldShrineUnlocked !== user.isGoldShrineUnlocked
+        ) {
+          updateUser(latestUser);
+        }
+
+        const popupKey = `${TAVERN_POPUP_PREFIX}:${latestUser.id}`;
+        if (latestUser.secretLetterCount >= 1 && localStorage.getItem(popupKey) !== "true") {
+          setShowTavernPopup(true);
         }
       })
       .catch((err) => {
@@ -208,6 +233,18 @@ export default function MainPage() {
         console.error("Failed to load total point:", err);
       });
   }, [logout, navigate, updateUser, user]);
+
+  const closeTavernPopup = () => {
+    if (user) {
+      localStorage.setItem(`${TAVERN_POPUP_PREFIX}:${user.id}`, "true");
+    }
+    setShowTavernPopup(false);
+  };
+
+  const goToTavern = () => {
+    closeTavernPopup();
+    navigate("/ai-chat-food");
+  };
 
   useEffect(() => {
     if (characterImageUrl || !user?.id) return;
@@ -360,6 +397,32 @@ export default function MainPage() {
             </button>
           ))}
         </div>
+
+        {showTavernPopup && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/55 px-8">
+            <div className="w-full rounded-[8px] border-[4px] border-[#5c3217] bg-[#fff3d6] px-5 py-5 text-center shadow-[0_8px_0_rgba(45,22,8,0.45)]">
+              <p className="text-[17px] font-black leading-7 text-[#321909]">
+                주막에서 음식점과 숙소를 추천받을 수 있습니다.
+              </p>
+              <div className="mt-5 flex gap-2">
+                <button
+                  type="button"
+                  onClick={closeTavernPopup}
+                  className="h-10 flex-1 rounded-[6px] bg-[#6b5a49] text-[13px] font-black text-white active:scale-95"
+                >
+                  확인
+                </button>
+                <button
+                  type="button"
+                  onClick={goToTavern}
+                  className="h-10 flex-1 rounded-[6px] bg-[#d9a44a] text-[13px] font-black text-[#321909] active:scale-95"
+                >
+                  주막 가기
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </MobileFrameLayout>
   );
