@@ -8,8 +8,10 @@ import { api } from "@/lib/api";
 import sosuBackground from "@/assets/images/place02_background.png";
 import quizImg from "@/assets/images/quiz.png";
 import wrongImg from "@/assets/images/X.png";
+import giveImg from "@/assets/images/give.png";
 
 const MUSEUM_LOCATION_CODE = "SOSU_MUSEUM";
+const MUSEUM_CORRECT_ARTIFACT_NUMBER = 1909;
 
 type Artifact = {
   artifactNumber: number;
@@ -136,13 +138,25 @@ export default function MuseumQuizPage() {
       return;
     }
 
-    if (isCompleted) {
-      navigate("/reward");
+    if (selectedNumber === null) {
+      showWrongFeedback();
       return;
     }
 
-    if (selectedNumber === null) {
-      showWrongFeedback();
+    if (isCompleted) {
+      if (selectedNumber === MUSEUM_CORRECT_ARTIFACT_NUMBER) {
+        setShowWrongImage(false);
+        navigate("/reward", {
+          state: {
+            rewardPoints: 0,
+            totalPoints: user.points,
+            secretLetter: null,
+            isGoldShrineUnlocked: user.isGoldShrineUnlocked,
+          },
+        });
+      } else {
+        showWrongFeedback();
+      }
       return;
     }
 
@@ -155,7 +169,6 @@ export default function MuseumQuizPage() {
 
       if (res.data?.isCorrect) {
         setShowWrongImage(false);
-        setIsCompleted(true);
         updateUser({ ...user, points: res.data.totalPoints });
         navigate("/reward", {
           state: {
@@ -171,7 +184,7 @@ export default function MuseumQuizPage() {
     } catch (err) {
       const msg = err instanceof Error ? err.message : "";
       if (msg.includes("M002")) {
-        navigate("/reward");
+        showWrongFeedback();
       } else {
         showWrongFeedback();
       }
@@ -189,6 +202,20 @@ export default function MuseumQuizPage() {
         />
         <div className="absolute inset-0 bg-[#0f172a]/55" />
 
+        <a
+          href="https://yjlove.kr/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="absolute left-0 top-0 z-10 w-full"
+        >
+          <img
+            src={giveImg}
+            alt="give"
+            className="w-full"
+            draggable={false}
+          />
+        </a>
+
         <div className="absolute left-1/2 top-[200px] w-[430px] -translate-x-1/2">
           <img
             src={quizImg}
@@ -203,7 +230,7 @@ export default function MuseumQuizPage() {
             </p>
 
             {/* 소장품 선택 목록 */}
-            <div className="mt-[8px] max-h-[160px] overflow-y-auto flex flex-col gap-[5px] pr-[2px]">
+            <div className="ml-[10px] mt-[8px] max-h-[160px] overflow-y-auto flex flex-col gap-[5px] pr-[2px]">
               {artifactsLoading || missionLoading ? (
                 <div className="flex items-center gap-2 py-2">
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#b55318] border-t-transparent" />
@@ -239,7 +266,7 @@ export default function MuseumQuizPage() {
           </form>
         </div>
 
-        <div className="absolute left-[14px] top-[594px] flex h-[50px] w-[362px] items-center justify-center rounded-[6px] bg-[#3b4658]">
+        <div className="absolute left-[14px] top-[694px] flex h-[50px] w-[362px] items-center justify-center rounded-[6px] bg-[#3b4658]">
           <button
             type="button"
             onClick={() => navigate("/main")}

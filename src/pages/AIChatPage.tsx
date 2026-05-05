@@ -126,7 +126,7 @@ export default function AIChatPage() {
     try {
       const res = await api.post<ConversationResponse>("/v1/conversations/chat", {
         userId: user.id,
-        characterType: "GOLD_PRINCE",
+        characterType: "GOLD_PRINCE_TRANSCENDED",
         message: text,
       });
       setMessages((prev) => [

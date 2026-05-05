@@ -3,7 +3,7 @@ import { useNavigate } from "react-router";
 
 import MobileFrameLayout from "@/components/layout/MobileFrameLayout";
 import { useAuth } from "@/context/AuthContext";
-import { api } from "@/lib/api";
+import { ApiError, api } from "@/lib/api";
 import backgroundMain from "@/assets/images/background_main.png";
 import mainBackground from "@/assets/images/main_background.jpg";
 import charImg from "@/assets/images/char.png";
@@ -54,6 +54,16 @@ type CharacterResponse = {
   } | null;
 };
 
+type AuthMeResponse = {
+  success?: boolean;
+  data?: {
+    totalPoint?: number;
+    points?: number;
+  };
+  totalPoint?: number;
+  points?: number;
+};
+
 const markers: Marker[] = [
   {
     id: "place-01",
@@ -100,7 +110,7 @@ const markers: Marker[] = [
     left: 285,
     width: 54,
     height: 73,
-    path: "/food",
+    path: "/ai-chat-food",
   },
   {
     id: "place-06",
@@ -167,11 +177,37 @@ const navItems: NavItem[] = [
 
 export default function MainPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, updateUser, logout } = useAuth();
   const [characterImageUrl, setCharacterImageUrl] = useState<string | null>(
     () => sessionStorage.getItem("charImageUrl"),
   );
   const [failedCharacterImageUrl, setFailedCharacterImageUrl] = useState<string | null>(null);
+  const [totalPoint, setTotalPoint] = useState<number | null>(() => user?.points ?? null);
+
+  useEffect(() => {
+    if (!user) return;
+
+    api
+      .get<AuthMeResponse>("/v1/auth/me")
+      .then((res) => {
+        const nextTotalPoint = res.data?.totalPoint ?? res.data?.points ?? res.totalPoint ?? res.points;
+        if (typeof nextTotalPoint !== "number") return;
+
+        setTotalPoint(nextTotalPoint);
+        if (user.points !== nextTotalPoint) {
+          updateUser({ ...user, points: nextTotalPoint });
+        }
+      })
+      .catch((err) => {
+        if (err instanceof ApiError && err.errorCode === "A004") {
+          logout();
+          navigate("/", { replace: true });
+          return;
+        }
+
+        console.error("Failed to load total point:", err);
+      });
+  }, [logout, navigate, updateUser, user]);
 
   useEffect(() => {
     if (characterImageUrl || !user?.id) return;
@@ -223,6 +259,11 @@ export default function MainPage() {
           className="absolute left-[7px] top-[26px] h-[39px] w-[139px] object-cover"
           draggable={false}
         />
+        <div className="pointer-events-none absolute left-[7px] top-[24px] flex h-[39px] w-[139px] items-center justify-end pr-[15px] pt-[1px]">
+          <span className="min-w-[58px] text-center text-[17px] font-black leading-none text-[#ffd84a] drop-shadow-[0_1px_1px_rgba(45,22,4,0.9)]">
+            {(totalPoint ?? user?.points ?? 0).toLocaleString("ko-KR")}
+          </span>
+        </div>
 
         <button
           type="button"
@@ -302,27 +343,23 @@ export default function MainPage() {
           draggable={false}
         />
 
-        {navItems.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => navigate(item.path)}
-            className="absolute transition-transform active:scale-95"
-            style={{
-              top: `${item.top}px`,
-              left: `${item.left}px`,
-              width: `${item.width}px`,
-              height: `${item.height}px`,
-            }}
-          >
-            <img
-              src={item.image}
-              alt={item.alt}
-              className="h-full w-full object-cover"
-              draggable={false}
-            />
-          </button>
-        ))}
+        <div className="absolute left-0 top-[759px] flex h-[85px] w-[390px] items-center">
+          {navItems.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => navigate(item.path)}
+              className="flex h-full flex-1 items-center justify-center transition-transform active:scale-95"
+            >
+              <img
+                src={item.image}
+                alt={item.alt}
+                className="h-[66px] w-full object-contain"
+                draggable={false}
+              />
+            </button>
+          ))}
+        </div>
       </div>
     </MobileFrameLayout>
   );

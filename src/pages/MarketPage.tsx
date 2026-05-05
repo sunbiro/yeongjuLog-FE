@@ -68,19 +68,19 @@ export default function MarketPage() {
         <img
           src={marketCardImg}
           alt="장터 안내"
-          className="absolute left-[36px] top-[640px] h-[104px] w-80 object-cover"
+          className="absolute left-[34px] top-[635px] h-[104px] w-80 object-cover"
           draggable={false}
         />
         <img
           src={pointCardImg}
           alt="포인트 상점"
-          className="absolute left-[41px] top-[566px] h-[79px] w-[309px] object-cover"
+          className="absolute left-[40px] top-[562px] h-[79px] w-[309px] object-cover"
           draggable={false}
         />
         <img
           src={ticketCardImg}
           alt="상품권 상점"
-          className="absolute left-[29px] top-[165px] h-[79px] w-[338px] object-cover"
+          className="absolute left-[28px] top-[163px] h-[79px] w-[338px] object-cover"
           draggable={false}
         />
 
@@ -105,27 +105,18 @@ export default function MarketPage() {
           draggable={false}
         />
 
-        {navItems.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => navigate(item.path)}
-            className="absolute transition-transform active:scale-95"
-            style={{
-              top: `${item.top}px`,
-              left: `${item.left}px`,
-              width: `${item.width}px`,
-              height: `${item.height}px`,
-            }}
-          >
-            <img
-              src={item.image}
-              alt={item.alt}
-              className="h-full w-full object-cover"
-              draggable={false}
-            />
-          </button>
-        ))}
+        <div className="absolute left-0 top-[755px] flex h-[85px] w-[390px] items-center">
+          {navItems.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => navigate(item.path)}
+              className="flex h-full flex-1 items-center justify-center transition-transform active:scale-95"
+            >
+              <img src={item.image} alt={item.alt} className="h-[66px] w-full object-contain" draggable={false} />
+            </button>
+          ))}
+        </div>
       </div>
     </MobileFrameLayout>
   );
