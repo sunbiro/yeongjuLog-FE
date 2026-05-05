@@ -44,6 +44,12 @@ type MissionSubmitResponse = {
   };
 };
 
+const SOSU_SEOWON_CORRECT_ANSWER = "숙수사";
+
+function normalizeAnswer(value: string) {
+  return value.trim().toLowerCase().replace(/\s+/g, "");
+}
+
 export default function SosuSeowonQuizPage() {
   const navigate = useNavigate();
   const { user, updateUser } = useAuth();
@@ -108,14 +114,26 @@ export default function SosuSeowonQuizPage() {
       return;
     }
 
-    if (isCompleted) {
-      navigate("/reward");
-      return;
-    }
-
     const submitAnswer = answer.trim();
     if (!submitAnswer) {
       showWrongFeedback();
+      return;
+    }
+
+    if (isCompleted) {
+      if (normalizeAnswer(submitAnswer) === normalizeAnswer(SOSU_SEOWON_CORRECT_ANSWER)) {
+        setShowWrongImage(false);
+        navigate("/reward", {
+          state: {
+            rewardPoints: 0,
+            totalPoints: user.points,
+            secretLetter: null,
+            isGoldShrineUnlocked: user.isGoldShrineUnlocked,
+          },
+        });
+      } else {
+        showWrongFeedback();
+      }
       return;
     }
 
@@ -128,7 +146,6 @@ export default function SosuSeowonQuizPage() {
 
       if (res.data?.isCorrect) {
         setShowWrongImage(false);
-        setIsCompleted(true);
         updateUser({ ...user, points: res.data.totalPoints });
         navigate("/reward", {
           state: {
@@ -144,7 +161,7 @@ export default function SosuSeowonQuizPage() {
     } catch (err) {
       const msg = err instanceof Error ? err.message : "";
       if (msg.includes("M002")) {
-        navigate("/reward");
+        showWrongFeedback();
       } else {
         showWrongFeedback();
       }

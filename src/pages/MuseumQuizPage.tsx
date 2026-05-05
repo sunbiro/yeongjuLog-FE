@@ -11,6 +11,7 @@ import wrongImg from "@/assets/images/X.png";
 import giveImg from "@/assets/images/give.png";
 
 const MUSEUM_LOCATION_CODE = "SOSU_MUSEUM";
+const MUSEUM_CORRECT_ARTIFACT_NUMBER = 1909;
 
 type Artifact = {
   artifactNumber: number;
@@ -137,13 +138,25 @@ export default function MuseumQuizPage() {
       return;
     }
 
-    if (isCompleted) {
-      navigate("/reward");
+    if (selectedNumber === null) {
+      showWrongFeedback();
       return;
     }
 
-    if (selectedNumber === null) {
-      showWrongFeedback();
+    if (isCompleted) {
+      if (selectedNumber === MUSEUM_CORRECT_ARTIFACT_NUMBER) {
+        setShowWrongImage(false);
+        navigate("/reward", {
+          state: {
+            rewardPoints: 0,
+            totalPoints: user.points,
+            secretLetter: null,
+            isGoldShrineUnlocked: user.isGoldShrineUnlocked,
+          },
+        });
+      } else {
+        showWrongFeedback();
+      }
       return;
     }
 
@@ -156,7 +169,6 @@ export default function MuseumQuizPage() {
 
       if (res.data?.isCorrect) {
         setShowWrongImage(false);
-        setIsCompleted(true);
         updateUser({ ...user, points: res.data.totalPoints });
         navigate("/reward", {
           state: {
@@ -172,7 +184,7 @@ export default function MuseumQuizPage() {
     } catch (err) {
       const msg = err instanceof Error ? err.message : "";
       if (msg.includes("M002")) {
-        navigate("/reward");
+        showWrongFeedback();
       } else {
         showWrongFeedback();
       }
