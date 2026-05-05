@@ -206,22 +206,18 @@ export default function InventoryPage() {
           draggable={false}
         />
 
-        {navItems.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => navigate(item.path)}
-            className="absolute transition-transform active:scale-95"
-            style={{
-              top: `${item.top}px`,
-              left: `${item.left}px`,
-              width: `${item.width}px`,
-              height: `${item.height}px`,
-            }}
-          >
-            <img src={item.image} alt={item.alt} className="h-full w-full object-cover" draggable={false} />
-          </button>
-        ))}
+        <div className="absolute left-0 top-[755px] flex h-[85px] w-[390px] items-center">
+          {navItems.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => navigate(item.path)}
+              className="flex h-full flex-1 items-center justify-center transition-transform active:scale-95"
+            >
+              <img src={item.image} alt={item.alt} className="h-[66px] w-full object-contain" draggable={false} />
+            </button>
+          ))}
+        </div>
       </div>
     </MobileFrameLayout>
   );

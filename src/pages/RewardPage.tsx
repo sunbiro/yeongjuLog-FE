@@ -51,7 +51,7 @@ export default function RewardPage() {
 
         {/* 밀서 조각 카드 */}
         {secretLetter && (
-          <div className="absolute left-1/2 top-[200px] -translate-x-1/2">
+          <div className="absolute left-1/2 top-[290px] -translate-x-1/2">
             <div className="relative">
               <img
                 src={relicCardImg}
@@ -80,7 +80,7 @@ export default function RewardPage() {
         />
 
         {/* 보상 텍스트 */}
-        <div className="absolute left-1/2 top-[596px] flex w-[306px] -translate-x-1/2 flex-col items-center gap-4 text-center">
+        <div className="absolute left-1/2 top-[556px] flex w-[306px] -translate-x-1/2 flex-col items-center gap-4 text-center">
           {secretLetter ? (
             <p className="w-full text-[16px] font-black leading-[26px]">
               밀서조각 #{secretLetter.sequenceNumber} - '{secretLetter.title}'를 획득했습니다.
@@ -104,7 +104,7 @@ export default function RewardPage() {
           <button
             type="button"
             onClick={() => navigate("/ai-chat")}
-            className="mt-[51px] h-[86px] w-[258px] transition-transform active:scale-[0.98]"
+            className="h-[86px] w-[258px] transition-transform active:scale-[0.98]"
             aria-label="리워드 수령"
           >
             <img

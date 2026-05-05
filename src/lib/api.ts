@@ -1,5 +1,17 @@
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://3.34.190.164:8080";
 
+export class ApiError extends Error {
+  status: number;
+  errorCode?: string;
+
+  constructor(message: string, status: number, errorCode?: string) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.errorCode = errorCode;
+  }
+}
+
 function getToken(): string | null {
   return localStorage.getItem("accessToken");
 }
@@ -17,11 +29,11 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   if (!res.ok) {
     const error = await res.json().catch(() => ({}));
     const { message, errorCode } = error as { message?: string; errorCode?: string };
-    throw new Error(
-      [message ?? `HTTP ${res.status}`, errorCode ? `(${errorCode})` : ""]
-        .filter(Boolean)
-        .join(" "),
-    );
+    const errorMessage = [message ?? `HTTP ${res.status}`, errorCode ? `(${errorCode})` : ""]
+      .filter(Boolean)
+      .join(" ");
+
+    throw new ApiError(errorMessage, res.status, errorCode);
   }
 
   return res.json() as Promise<T>;

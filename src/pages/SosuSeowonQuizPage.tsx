@@ -8,6 +8,7 @@ import { api } from "@/lib/api";
 import sosuBackground from "@/assets/images/place02_background.png";
 import quizImg from "@/assets/images/quiz.png";
 import wrongImg from "@/assets/images/X.png";
+import giveImg from "@/assets/images/give.png";
 
 type MissionResponse = {
   success: boolean;
@@ -161,6 +162,20 @@ export default function SosuSeowonQuizPage() {
         />
         <div className="absolute inset-0 bg-[#0f172a]/55" />
 
+        <a
+          href="https://yjlove.kr/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="absolute top-0 left-0 z-10 w-full"
+        >
+          <img
+            src={giveImg}
+            alt="give"
+            className="w-full"
+            draggable={false}
+          />
+        </a>
+
         <div className="absolute left-1/2 top-[200px] w-[430px] -translate-x-1/2">
           <img
             src={quizImg}
@@ -171,7 +186,7 @@ export default function SosuSeowonQuizPage() {
 
           <form onSubmit={handleSubmit} className="absolute left-[70px] top-[172px] flex w-[290px] flex-col">
             <p className="ml-[5px] mt-[8px] h-[29px] text-[14px] font-black leading-[19px] text-[#f7e8c7]">
-              금성대군의 행적을 기록한 이 문헌, 금성대군실기의 소수박물관 소장품 번호는 무엇인가?
+              비극 속에 잊힌 이 옛 절의 이름은 무엇인가?
             </p>
             <input
               value={answer}
