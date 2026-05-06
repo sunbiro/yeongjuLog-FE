@@ -13,9 +13,12 @@ type RecommendRestaurant = {
   roadAddress?: string;
   phoneNumber?: string | null;
   category?: string;
-  badges?: string[];
-  isHighlyRecommended?: boolean;
   menuInfo?: string | null;
+  isYeongjuRestaurant?: boolean;
+  isSafeRestaurant?: boolean;
+  isFairPriceStore?: boolean;
+  isGiftCertificateStore?: boolean;
+  isHighlyRecommended?: boolean;
   kakaoMapUrl?: string | null;
   naverMapUrl?: string | null;
 };
@@ -25,8 +28,8 @@ type RecommendAccommodation = {
   name: string;
   roadAddress?: string | null;
   roomCount?: number | null;
+  phoneNumber?: string | null;
   kakaoMapUrl?: string | null;
-  naverMapUrl?: string | null;
 };
 
 type RecommendByLocationResponse = {
@@ -46,6 +49,24 @@ type RecommendByLocationResponse = {
 
 type ViewMode = "restaurants" | "accommodations";
 
+function RestaurantBadges({ r }: { r: RecommendRestaurant }) {
+  const badges: string[] = [];
+  if (r.isYeongjuRestaurant) badges.push("⭐ 영주맛집");
+  if (r.isSafeRestaurant) badges.push("🧼 안심식당");
+  if (r.isFairPriceStore) badges.push("💰 착한가격");
+  if (r.isGiftCertificateStore) badges.push("🏷️ 상품권");
+  if (badges.length === 0) return null;
+  return (
+    <div className="mt-2 flex flex-wrap gap-1">
+      {badges.map((badge) => (
+        <span key={badge} className="rounded-full bg-[#2a1a0e] px-2 py-0.5 text-[10px] text-[#fef3c6]">
+          {badge}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 export default function FoodPage() {
   const navigate = useNavigate();
 
@@ -62,8 +83,6 @@ export default function FoodPage() {
     api
       .post<RecommendByLocationResponse>("/v1/recommendations/by-location", {
         locationType: "SOSU_MUSEUM",
-        radiusKm: 3.0,
-        accommodationLimit: 5,
       })
       .then((res) => {
         if (res.data) {
@@ -105,7 +124,7 @@ export default function FoodPage() {
             {viewMode === "restaurants" ? "영주 맛집 추천" : "영주 숙소 찾기"}
           </h1>
           <p className="mt-0.5 text-xs text-[#a87a4a]">
-            소수박물관 기준 · 반경 3km
+            소수박물관 기준
           </p>
           <div className="mt-3 grid grid-cols-2 gap-2 rounded-lg border border-[#7b3306] bg-[#1a0d05]/80 p-1">
             <button
@@ -152,24 +171,24 @@ export default function FoodPage() {
           {dataLoading &&
             ((viewMode === "restaurants" && restaurants.length === 0) ||
               (viewMode === "accommodations" && accommodations.length === 0)) && (
-              <div className="flex flex-col items-center gap-2 py-6">
-                <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#bb4d00] border-t-transparent" />
-                <p className="text-xs text-[#a87a4a]">
-                  {viewMode === "restaurants" ? "주변 맛집을 찾는 중..." : "주변 숙소를 찾는 중..."}
-                </p>
-              </div>
-            )}
+            <div className="flex flex-col items-center gap-2 py-6">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#bb4d00] border-t-transparent" />
+              <p className="text-xs text-[#a87a4a]">
+                {viewMode === "restaurants" ? "주변 맛집을 찾는 중..." : "주변 숙소를 찾는 중..."}
+              </p>
+            </div>
+          )}
 
           {/* 결과 없음 */}
           {!dataLoading && viewMode === "restaurants" && restaurants.length === 0 && (
             <div className="py-6 text-center">
-              <p className="text-sm text-[#a87a4a]">반경 3km 내 등록된 맛집이 없습니다.</p>
+              <p className="text-sm text-[#a87a4a]">주변 등록된 맛집이 없습니다.</p>
             </div>
           )}
 
           {!dataLoading && viewMode === "accommodations" && accommodations.length === 0 && (
             <div className="py-6 text-center">
-              <p className="text-sm text-[#a87a4a]">반경 3km 내 등록된 숙소가 없습니다.</p>
+              <p className="text-sm text-[#a87a4a]">주변 등록된 숙소가 없습니다.</p>
             </div>
           )}
 
@@ -190,18 +209,7 @@ export default function FoodPage() {
                 )}
               </div>
 
-              {r.badges && r.badges.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-1">
-                  {r.badges.map((badge) => (
-                    <span
-                      key={badge}
-                      className="rounded-full bg-[#2a1a0e] px-2 py-0.5 text-[10px] text-[#fef3c6]"
-                    >
-                      {badge}
-                    </span>
-                  ))}
-                </div>
-              )}
+              <RestaurantBadges r={r} />
 
               {r.menuInfo && (
                 <p className="mt-2 text-sm leading-5 text-[#fef3c6]">{r.menuInfo}</p>
@@ -257,6 +265,10 @@ export default function FoodPage() {
               <p className="mt-2 text-[11px] text-[#7b5c3a]">
                 📍 {a.roadAddress ?? "주소 정보 없음"}
               </p>
+
+              {a.phoneNumber && (
+                <p className="mt-0.5 text-[11px] text-[#7b5c3a]">📞 {a.phoneNumber}</p>
+              )}
 
               {a.kakaoMapUrl && (
                 <div className="mt-3">
