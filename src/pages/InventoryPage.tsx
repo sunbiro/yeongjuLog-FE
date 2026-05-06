@@ -165,7 +165,7 @@ export default function InventoryPage() {
           {selected ? (
             <>
               <p className="text-[18px] font-bold leading-7 tracking-[1px] text-[#3d1f00]">
-                밀서조각#{selected.secretLetter.sequenceNumber} - {selected.secretLetter.title}
+                {selected.secretLetter.title}
               </p>
               <p className="mt-1 text-[12px] text-[#7b5c3a]">
                 수집 장소: {selected.locationName}
