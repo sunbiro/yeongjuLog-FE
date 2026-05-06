@@ -14,10 +14,7 @@ type RecommendRestaurant = {
   phoneNumber?: string | null;
   category?: string;
   menuInfo?: string | null;
-  isYeongjuRestaurant?: boolean;
-  isSafeRestaurant?: boolean;
-  isFairPriceStore?: boolean;
-  isGiftCertificateStore?: boolean;
+  badges?: string[];
   isHighlyRecommended?: boolean;
   kakaoMapUrl?: string | null;
   naverMapUrl?: string | null;
@@ -50,15 +47,10 @@ type RecommendByLocationResponse = {
 type ViewMode = "restaurants" | "accommodations";
 
 function RestaurantBadges({ r }: { r: RecommendRestaurant }) {
-  const badges: string[] = [];
-  if (r.isYeongjuRestaurant) badges.push("⭐ 영주맛집");
-  if (r.isSafeRestaurant) badges.push("🧼 안심식당");
-  if (r.isFairPriceStore) badges.push("💰 착한가격");
-  if (r.isGiftCertificateStore) badges.push("🏷️ 상품권");
-  if (badges.length === 0) return null;
+  if (!r.badges || r.badges.length === 0) return null;
   return (
     <div className="mt-2 flex flex-wrap gap-1">
-      {badges.map((badge) => (
+      {r.badges.map((badge) => (
         <span key={badge} className="rounded-full bg-[#2a1a0e] px-2 py-0.5 text-[10px] text-[#fef3c6]">
           {badge}
         </span>
