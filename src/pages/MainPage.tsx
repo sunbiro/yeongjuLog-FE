@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useLocation } from "react-router";
 
 import MobileFrameLayout from "@/components/layout/MobileFrameLayout";
 import { useAuth, type User } from "@/context/AuthContext";
@@ -179,6 +179,7 @@ const navItems: NavItem[] = [
 
 export default function MainPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, updateUser, logout } = useAuth();
   const [characterImageUrl, setCharacterImageUrl] = useState<string | null>(
     () => sessionStorage.getItem("charImageUrl"),
@@ -218,10 +219,6 @@ export default function MainPage() {
           updateUser(latestUser);
         }
 
-        const popupKey = `${TAVERN_POPUP_PREFIX}:${latestUser.id}`;
-        if (latestUser.secretLetterCount >= 1 && localStorage.getItem(popupKey) !== "true") {
-          setShowTavernPopup(true);
-        }
       })
       .catch((err) => {
         if (err instanceof ApiError && err.errorCode === "A004") {
@@ -233,6 +230,14 @@ export default function MainPage() {
         console.error("Failed to load total point:", err);
       });
   }, [logout, navigate, updateUser, user]);
+
+  useEffect(() => {
+    if (!user || location.state?.fromDokkaebiChat !== true) return;
+    const popupKey = `${TAVERN_POPUP_PREFIX}:${user.id}`;
+    if (localStorage.getItem(popupKey) !== "true") {
+      setShowTavernPopup(true);
+    }
+  }, [user, location.state?.fromDokkaebiChat]);
 
   const closeTavernPopup = () => {
     if (user) {

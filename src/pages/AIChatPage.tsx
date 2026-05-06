@@ -158,7 +158,9 @@ export default function AIChatPage() {
         <header className="relative z-20 flex h-[60px] shrink-0 items-center bg-[#743210] px-4 shadow-[0_3px_0_rgba(57,22,9,0.55)]">
           <button
             type="button"
-            onClick={() => navigate("/main")}
+            onClick={() =>
+              navigate("/main", messages.length > 1 ? { state: { fromDokkaebiChat: true } } : undefined)
+            }
             className="flex h-10 w-10 items-center justify-center active:scale-95"
             aria-label="메인으로 돌아가기"
           >
