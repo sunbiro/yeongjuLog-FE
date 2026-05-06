@@ -37,6 +37,8 @@ type Accommodation = {
   latitude: number;
   longitude: number;
   phoneNumber: string | null;
+  kakaoMapUrl: string | null;
+  naverMapUrl: string | null;
 };
 
 type AccommodationNearbyResponse = {
@@ -339,24 +341,30 @@ export default function FoodPage() {
                 <p className="mt-0.5 text-[11px] text-[#7b5c3a]">영업 시작일 {a.businessStartDate}</p>
               )}
 
-              <div className="mt-3 flex gap-2">
-                <a
-                  href={`https://map.kakao.com/link/search/${encodeURIComponent(a.name)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-1 rounded-lg bg-[#fee500] py-1.5 text-center text-[11px] font-bold text-black active:scale-95"
-                >
-                  카카오맵
-                </a>
-                <a
-                  href={`https://map.naver.com/v5/search/${encodeURIComponent(a.name)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-1 rounded-lg bg-[#03c75a] py-1.5 text-center text-[11px] font-bold text-white active:scale-95"
-                >
-                  네이버맵
-                </a>
-              </div>
+              {(a.kakaoMapUrl || a.naverMapUrl) && (
+                <div className="mt-3 flex gap-2">
+                  {a.kakaoMapUrl && (
+                    <a
+                      href={a.kakaoMapUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 rounded-lg bg-[#fee500] py-1.5 text-center text-[11px] font-bold text-black active:scale-95"
+                    >
+                      카카오맵
+                    </a>
+                  )}
+                  {a.naverMapUrl && (
+                    <a
+                      href={a.naverMapUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 rounded-lg bg-[#03c75a] py-1.5 text-center text-[11px] font-bold text-white active:scale-95"
+                    >
+                      네이버맵
+                    </a>
+                  )}
+                </div>
+              )}
             </div>
           ))}
         </div>
