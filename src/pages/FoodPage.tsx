@@ -27,6 +27,7 @@ type RecommendAccommodation = {
   roomCount?: number | null;
   phoneNumber?: string | null;
   kakaoMapUrl?: string | null;
+  naverMapUrl?: string | null;
 };
 
 type RecommendByLocationResponse = {
@@ -262,15 +263,15 @@ export default function FoodPage() {
                 <p className="mt-0.5 text-[11px] text-[#7b5c3a]">📞 {a.phoneNumber}</p>
               )}
 
-              {a.kakaoMapUrl && (
+              {a.naverMapUrl && (
                 <div className="mt-3">
                   <a
-                    href={a.kakaoMapUrl}
+                    href={a.naverMapUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="block w-full rounded-lg bg-[#fee500] py-1.5 text-center text-[11px] font-bold text-black active:scale-95"
+                    className="block w-full rounded-lg bg-[#03c75a] py-1.5 text-center text-[11px] font-bold text-white active:scale-95"
                   >
-                    카카오맵
+                    네이버맵
                   </a>
                 </div>
               )}
