@@ -74,9 +74,14 @@ export default function CharSetupPage() {
       return;
     }
 
-    setError(null);
-    setPhotoFile(file);
-    setPreview(await readFileAsDataUrl(file));
+    try {
+      setError(null);
+      setPhotoFile(file);
+      setPreview(await readFileAsDataUrl(file));
+    } catch {
+      setError("사진을 불러오는 데 실패했습니다. 다른 사진을 선택해 주세요.");
+      event.target.value = "";
+    }
   };
 
   const handleGenerate = async (event: FormEvent<HTMLFormElement>) => {
@@ -232,7 +237,6 @@ export default function CharSetupPage() {
             ref={fileInputRef}
             type="file"
             accept="image/*"
-            capture="user"
             className="hidden"
             onChange={handlePhotoChange}
           />
