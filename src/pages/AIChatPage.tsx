@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useLocation } from "react-router";
 
 import MobileFrameLayout from "@/components/layout/MobileFrameLayout";
 import { useAuth } from "@/context/AuthContext";
@@ -97,6 +97,8 @@ function UserMessage({ content }: { content: string }) {
 
 export default function AIChatPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const locationId = (location.state as { locationId?: number } | null)?.locationId;
   const { user } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -127,6 +129,7 @@ export default function AIChatPage() {
       const res = await api.post<ConversationResponse>("/v1/conversations/chat", {
         userId: user.id,
         characterType: "GOLD_PRINCE_TRANSCENDED",
+        locationId,
         message: text,
       });
       setMessages((prev) => [

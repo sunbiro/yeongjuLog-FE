@@ -2,58 +2,45 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 
 import MobileFrameLayout from "@/components/layout/MobileFrameLayout";
-import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
 import foodImg from "@/assets/images/food.jpg";
 import foodcharImg from "@/assets/images/foodchar.png";
 
-type Restaurant = {
+type RecommendRestaurant = {
   id: number;
   name: string;
-  address: string;
-  roadAddress: string;
-  phoneNumber: string | null;
-  category: string;
-  latitude: number;
-  longitude: number;
-  badges: string[];
-  isHighlyRecommended: boolean;
-  menuInfo: string | null;
-  kakaoMapUrl: string | null;
-  naverMapUrl: string | null;
+  address?: string;
+  roadAddress?: string;
+  phoneNumber?: string | null;
+  category?: string;
+  badges?: string[];
+  isHighlyRecommended?: boolean;
+  menuInfo?: string | null;
+  kakaoMapUrl?: string | null;
+  naverMapUrl?: string | null;
 };
 
-type NearbyResponse = {
-  success: boolean;
-  data: Restaurant[];
-};
-
-type Accommodation = {
+type RecommendAccommodation = {
   id: number;
   name: string;
-  roadAddress: string | null;
-  roomCount: number | null;
-  businessStartDate: string | null;
-  latitude: number;
-  longitude: number;
-  phoneNumber: string | null;
-  kakaoMapUrl: string | null;
-  naverMapUrl: string | null;
+  roadAddress?: string | null;
+  roomCount?: number | null;
+  kakaoMapUrl?: string | null;
+  naverMapUrl?: string | null;
 };
 
-type AccommodationNearbyResponse = {
-  success: boolean;
-  data: Accommodation[];
-};
-
-type FoodRecommendResponse = {
+type RecommendByLocationResponse = {
   success: boolean;
   data: {
-    response: string;
-    candidateCount: number;
-    candidates: Restaurant[];
-    hasError: boolean;
-    errorMessage?: string;
+    locationName: string;
+    latitude: number;
+    longitude: number;
+    restaurantComment: string | null;
+    restaurants: RecommendRestaurant[];
+    restaurantCount: number;
+    accommodationComment: string | null;
+    accommodations: RecommendAccommodation[];
+    accommodationCount: number;
   };
 };
 
@@ -65,29 +52,28 @@ type GpsState =
 
 type ViewMode = "restaurants" | "accommodations";
 
-// TODO: 테스트용 하드코딩 좌표 — 실서비스 전 navigator.geolocation 으로 되돌릴 것
-const TEST_LOCATIONS = {
-  영주시내: { latitude: 36.8057, longitude: 128.6235 },
-  소수서원: { latitude: 36.8742, longitude: 128.6492 },
-  부석사:   { latitude: 36.9524, longitude: 128.7268 },
-  무섬마을: { latitude: 36.7783, longitude: 128.6872 },
-} as const;
-
-const TEST_LOCATION = TEST_LOCATIONS.영주시내;
-
 export default function FoodPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
 
   const [gps, setGps] = useState<GpsState>({ status: "idle" });
   const [viewMode, setViewMode] = useState<ViewMode>("restaurants");
-  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
-  const [accommodations, setAccommodations] = useState<Accommodation[]>([]);
-  const [aiComment, setAiComment] = useState<string | null>(null);
+  const [restaurants, setRestaurants] = useState<RecommendRestaurant[]>([]);
+  const [accommodations, setAccommodations] = useState<RecommendAccommodation[]>([]);
+  const [restaurantComment, setRestaurantComment] = useState<string | null>(null);
+  const [accommodationComment, setAccommodationComment] = useState<string | null>(null);
   const [dataLoading, setDataLoading] = useState(false);
 
   useEffect(() => {
-    setGps({ status: "ready", ...TEST_LOCATION });
+    setGps({ status: "loading" });
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setGps({ status: "ready", latitude: pos.coords.latitude, longitude: pos.coords.longitude });
+      },
+      () => {
+        setGps({ status: "ready", latitude: 36.8057, longitude: 128.6235 });
+      },
+      { timeout: 8000 },
+    );
   }, []);
 
   useEffect(() => {
@@ -95,46 +81,29 @@ export default function FoodPage() {
 
     const { latitude, longitude } = gps;
     setDataLoading(true);
-    setAiComment(null);
+    setRestaurantComment(null);
+    setAccommodationComment(null);
 
-    if (viewMode === "accommodations") {
-      setRestaurants([]);
-
-      api
-        .get<AccommodationNearbyResponse>(
-          `/v1/accommodations/nearby?latitude=${latitude}&longitude=${longitude}&radiusKm=5.0&limit=20`,
-        )
-        .then((nearbyRes) => {
-          if (nearbyRes.data) setAccommodations(nearbyRes.data);
-        })
-        .catch((err) => console.error("숙소 데이터 로딩 실패:", err))
-        .finally(() => setDataLoading(false));
-
-      return;
-    }
-
-    setAccommodations([]);
-
-    Promise.all([
-      api.get<NearbyResponse>(
-        `/v1/restaurants/nearby?latitude=${latitude}&longitude=${longitude}&radiusKm=3.0&limit=20`,
-      ),
-      api.post<FoodRecommendResponse>("/v1/conversations/recommend-food", {
-        userId: user?.id,
-        latitude,
-        longitude,
-        message: "주변 영주 맛집을 추천해주세요",
+    api
+      .post<RecommendByLocationResponse>("/v1/recommendations/by-location", {
+        locationType: "TAVERN",
+        userLatitude: latitude,
+        userLongitude: longitude,
         radiusKm: 3.0,
-        limit: 10,
-      }),
-    ])
-      .then(([nearbyRes, recommendRes]) => {
-        if (nearbyRes.data) setRestaurants(nearbyRes.data);
-        if (recommendRes.data?.response) setAiComment(recommendRes.data.response);
+        restaurantLimit: 10,
+        accommodationLimit: 5,
       })
-      .catch((err) => console.error("맛집 데이터 로딩 실패:", err))
+      .then((res) => {
+        if (res.data) {
+          setRestaurants(res.data.restaurants ?? []);
+          setAccommodations(res.data.accommodations ?? []);
+          setRestaurantComment(res.data.restaurantComment ?? null);
+          setAccommodationComment(res.data.accommodationComment ?? null);
+        }
+      })
+      .catch((err) => console.error("추천 데이터 로딩 실패:", err))
       .finally(() => setDataLoading(false));
-  }, [gps, user?.id, viewMode]);
+  }, [gps]);
 
   return (
     <MobileFrameLayout padded={false}>
@@ -164,11 +133,7 @@ export default function FoodPage() {
             {viewMode === "restaurants" ? "영주 맛집 추천" : "영주 숙소 찾기"}
           </h1>
           <p className="mt-0.5 text-xs text-[#a87a4a]">
-            {gps.status === "ready"
-              ? viewMode === "restaurants"
-                ? "현재 위치 기반 · 반경 3km"
-                : "현재 위치 기반 · 반경 5km"
-              : "주모가 엄선한 영주의 숨겨진 맛집"}
+            {gps.status === "ready" ? "현재 위치 기반 · 반경 3km" : "위치를 확인하는 중..."}
           </p>
           <div className="mt-3 grid grid-cols-2 gap-2 rounded-lg border border-[#7b3306] bg-[#1a0d05]/80 p-1">
             <button
@@ -194,7 +159,7 @@ export default function FoodPage() {
 
         {/* 본문 */}
         <div className="flex flex-1 flex-col gap-3 overflow-y-auto px-4 pb-8">
-          {/* GPS 로딩 / 에러 */}
+          {/* GPS 로딩 */}
           {(gps.status === "idle" || gps.status === "loading") && (
             <div className="flex flex-col items-center gap-2 py-10 text-center">
               <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#bb4d00] border-t-transparent" />
@@ -209,23 +174,24 @@ export default function FoodPage() {
           )}
 
           {/* AI 추천 코멘트 */}
-          {viewMode === "restaurants" && (aiComment || dataLoading) && gps.status === "ready" && (
+          {gps.status === "ready" && (dataLoading || (viewMode === "restaurants" ? restaurantComment : accommodationComment)) && (
             <div className="rounded-2xl border border-[#bb4d00] bg-[#2a1a0e] px-4 py-4">
               <p className="mb-2 text-[11px] font-bold tracking-wider text-[#bb4d00]">주모의 추천</p>
-              {dataLoading && !aiComment ? (
+              {dataLoading && !(viewMode === "restaurants" ? restaurantComment : accommodationComment) ? (
                 <div className="flex items-center gap-2">
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#fee685] border-t-transparent" />
                   <p className="text-xs text-[#fee685]/60">추천 문구를 생성하는 중...</p>
                 </div>
               ) : (
-                <p className="text-sm italic leading-6 text-[#fee685]">"{aiComment}"</p>
+                <p className="text-sm italic leading-6 text-[#fee685]">
+                  "{viewMode === "restaurants" ? restaurantComment : accommodationComment}"
+                </p>
               )}
             </div>
           )}
 
-          {/* 맛집 목록 로딩 */}
-          {dataLoading &&
-            gps.status === "ready" &&
+          {/* 목록 로딩 */}
+          {dataLoading && gps.status === "ready" &&
             ((viewMode === "restaurants" && restaurants.length === 0) ||
               (viewMode === "accommodations" && accommodations.length === 0)) && (
             <div className="flex flex-col items-center gap-2 py-6">
@@ -236,26 +202,28 @@ export default function FoodPage() {
             </div>
           )}
 
-          {/* 맛집 없음 */}
+          {/* 결과 없음 */}
           {!dataLoading && gps.status === "ready" && viewMode === "restaurants" && restaurants.length === 0 && (
             <div className="py-6 text-center">
               <p className="text-sm text-[#a87a4a]">반경 3km 내 등록된 맛집이 없습니다.</p>
             </div>
           )}
 
-          {/* 맛집 카드 */}
           {!dataLoading && gps.status === "ready" && viewMode === "accommodations" && accommodations.length === 0 && (
             <div className="py-6 text-center">
-              <p className="text-sm text-[#a87a4a]">반경 5km 안에 등록된 숙소가 없습니다.</p>
+              <p className="text-sm text-[#a87a4a]">반경 3km 내 등록된 숙소가 없습니다.</p>
             </div>
           )}
 
+          {/* 맛집 카드 */}
           {viewMode === "restaurants" && restaurants.map((r) => (
             <div key={r.id} className="rounded-2xl border border-[#7b3306] bg-[#1a0d05]/90 p-4">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <h2 className="truncate text-base font-bold text-[#fee685]">{r.name}</h2>
-                  <p className="mt-0.5 text-[11px] font-medium text-[#bb4d00]">{r.category}</p>
+                  {r.category && (
+                    <p className="mt-0.5 text-[11px] font-medium text-[#bb4d00]">{r.category}</p>
+                  )}
                 </div>
                 {r.isHighlyRecommended && (
                   <span className="shrink-0 rounded-full border border-[#bb4d00]/40 bg-[#bb4d00]/20 px-2 py-0.5 text-[10px] text-[#bb4d00]">
@@ -264,8 +232,7 @@ export default function FoodPage() {
                 )}
               </div>
 
-              {/* 뱃지 */}
-              {r.badges.length > 0 && (
+              {r.badges && r.badges.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-1">
                   {r.badges.map((badge) => (
                     <span
@@ -282,15 +249,16 @@ export default function FoodPage() {
                 <p className="mt-2 text-sm leading-5 text-[#fef3c6]">{r.menuInfo}</p>
               )}
 
-              <p className="mt-2 text-[11px] text-[#7b5c3a]">
-                📍 {r.roadAddress || r.address}
-              </p>
+              {(r.roadAddress || r.address) && (
+                <p className="mt-2 text-[11px] text-[#7b5c3a]">
+                  📍 {r.roadAddress ?? r.address}
+                </p>
+              )}
 
               {r.phoneNumber && (
                 <p className="mt-0.5 text-[11px] text-[#7b5c3a]">📞 {r.phoneNumber}</p>
               )}
 
-              {/* 지도 링크 */}
               {(r.kakaoMapUrl || r.naverMapUrl) && (
                 <div className="mt-3 flex gap-2">
                   {r.kakaoMapUrl && (
@@ -318,28 +286,19 @@ export default function FoodPage() {
             </div>
           ))}
 
+          {/* 숙소 카드 */}
           {viewMode === "accommodations" && accommodations.map((a) => (
             <div key={a.id} className="rounded-2xl border border-[#7b3306] bg-[#1a0d05]/90 p-4">
-              <div className="min-w-0">
-                <h2 className="truncate text-base font-bold text-[#fee685]">{a.name}</h2>
-                <p className="mt-0.5 text-[11px] font-medium text-[#bb4d00]">숙박시설</p>
-              </div>
+              <h2 className="truncate text-base font-bold text-[#fee685]">{a.name}</h2>
+              <p className="mt-0.5 text-[11px] font-medium text-[#bb4d00]">숙박시설</p>
 
-              {a.roomCount ? (
+              {a.roomCount != null && (
                 <p className="mt-2 text-sm leading-5 text-[#fef3c6]">객실 {a.roomCount}개</p>
-              ) : null}
+              )}
 
               <p className="mt-2 text-[11px] text-[#7b5c3a]">
-                주소 {a.roadAddress ?? "주소 정보 없음"}
+                📍 {a.roadAddress ?? "주소 정보 없음"}
               </p>
-
-              {a.phoneNumber && (
-                <p className="mt-0.5 text-[11px] text-[#7b5c3a]">전화 {a.phoneNumber}</p>
-              )}
-
-              {a.businessStartDate && (
-                <p className="mt-0.5 text-[11px] text-[#7b5c3a]">영업 시작일 {a.businessStartDate}</p>
-              )}
 
               {(a.kakaoMapUrl || a.naverMapUrl) && (
                 <div className="mt-3 flex gap-2">

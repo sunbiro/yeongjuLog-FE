@@ -19,6 +19,7 @@ type RewardState = {
   totalPoints: number;
   secretLetter: SecretLetter | null;
   isGoldShrineUnlocked: boolean;
+  locationId?: number;
 };
 
 export default function RewardPage() {
@@ -29,6 +30,7 @@ export default function RewardPage() {
   const rewardPoints = state?.rewardPoints ?? 0;
   const secretLetter = state?.secretLetter ?? null;
   const isGoldShrineUnlocked = state?.isGoldShrineUnlocked ?? false;
+  const locationId = state?.locationId;
 
   return (
     <MobileFrameLayout padded={false}>
@@ -103,7 +105,7 @@ export default function RewardPage() {
 
           <button
             type="button"
-            onClick={() => navigate("/ai-chat")}
+            onClick={() => navigate("/ai-chat", locationId != null ? { state: { locationId } } : undefined)}
             className="h-[86px] w-[258px] transition-transform active:scale-[0.98]"
             aria-label="리워드 수령"
           >

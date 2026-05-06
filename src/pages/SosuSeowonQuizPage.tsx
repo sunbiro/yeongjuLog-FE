@@ -129,6 +129,7 @@ export default function SosuSeowonQuizPage() {
             totalPoints: user.points,
             secretLetter: null,
             isGoldShrineUnlocked: user.isGoldShrineUnlocked,
+            locationId: 1,
           },
         });
       } else {
@@ -153,6 +154,7 @@ export default function SosuSeowonQuizPage() {
             totalPoints: res.data.totalPoints,
             secretLetter: res.data.secretLetter ?? null,
             isGoldShrineUnlocked: res.data.isGoldShrineUnlocked,
+            locationId: 1,
           },
         });
       } else {

@@ -152,6 +152,7 @@ export default function MuseumQuizPage() {
             totalPoints: user.points,
             secretLetter: null,
             isGoldShrineUnlocked: user.isGoldShrineUnlocked,
+            locationId: 2,
           },
         });
       } else {
@@ -176,6 +177,7 @@ export default function MuseumQuizPage() {
             totalPoints: res.data.totalPoints,
             secretLetter: res.data.secretLetter ?? null,
             isGoldShrineUnlocked: res.data.isGoldShrineUnlocked,
+            locationId: 2,
           },
         });
       } else {

@@ -110,7 +110,7 @@ export default function SeonbichonQuizPage() {
     }
 
     if (isCompleted) {
-      navigate("/reward");
+      navigate("/reward", { state: { locationId: 3 } });
       return;
     }
 
@@ -137,6 +137,7 @@ export default function SeonbichonQuizPage() {
             totalPoints: res.data.totalPoints,
             secretLetter: res.data.secretLetter ?? null,
             isGoldShrineUnlocked: res.data.isGoldShrineUnlocked,
+            locationId: 3,
           },
         });
       } else {
@@ -145,7 +146,7 @@ export default function SeonbichonQuizPage() {
     } catch (err) {
       const msg = err instanceof Error ? err.message : "";
       if (msg.includes("M002")) {
-        navigate("/reward");
+        navigate("/reward", { state: { locationId: 3 } });
       } else {
         showWrongFeedback();
       }
