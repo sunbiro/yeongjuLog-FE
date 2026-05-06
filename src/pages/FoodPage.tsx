@@ -44,18 +44,11 @@ type RecommendByLocationResponse = {
   };
 };
 
-type GpsState =
-  | { status: "idle" }
-  | { status: "loading" }
-  | { status: "error"; message: string }
-  | { status: "ready"; latitude: number; longitude: number };
-
 type ViewMode = "restaurants" | "accommodations";
 
 export default function FoodPage() {
   const navigate = useNavigate();
 
-  const [gps, setGps] = useState<GpsState>({ status: "idle" });
   const [viewMode, setViewMode] = useState<ViewMode>("restaurants");
   const [restaurants, setRestaurants] = useState<RecommendRestaurant[]>([]);
   const [accommodations, setAccommodations] = useState<RecommendAccommodation[]>([]);
@@ -64,33 +57,12 @@ export default function FoodPage() {
   const [dataLoading, setDataLoading] = useState(false);
 
   useEffect(() => {
-    setGps({ status: "loading" });
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setGps({ status: "ready", latitude: pos.coords.latitude, longitude: pos.coords.longitude });
-      },
-      () => {
-        setGps({ status: "ready", latitude: 36.8057, longitude: 128.6235 });
-      },
-      { timeout: 8000 },
-    );
-  }, []);
-
-  useEffect(() => {
-    if (gps.status !== "ready") return;
-
-    const { latitude, longitude } = gps;
     setDataLoading(true);
-    setRestaurantComment(null);
-    setAccommodationComment(null);
 
     api
       .post<RecommendByLocationResponse>("/v1/recommendations/by-location", {
-        locationType: "TAVERN",
-        userLatitude: latitude,
-        userLongitude: longitude,
+        locationType: "SOSU_MUSEUM",
         radiusKm: 3.0,
-        restaurantLimit: 10,
         accommodationLimit: 5,
       })
       .then((res) => {
@@ -103,7 +75,7 @@ export default function FoodPage() {
       })
       .catch((err) => console.error("추천 데이터 로딩 실패:", err))
       .finally(() => setDataLoading(false));
-  }, [gps]);
+  }, []);
 
   return (
     <MobileFrameLayout padded={false}>
@@ -133,7 +105,7 @@ export default function FoodPage() {
             {viewMode === "restaurants" ? "영주 맛집 추천" : "영주 숙소 찾기"}
           </h1>
           <p className="mt-0.5 text-xs text-[#a87a4a]">
-            {gps.status === "ready" ? "현재 위치 기반 · 반경 3km" : "위치를 확인하는 중..."}
+            소수박물관 기준 · 반경 3km
           </p>
           <div className="mt-3 grid grid-cols-2 gap-2 rounded-lg border border-[#7b3306] bg-[#1a0d05]/80 p-1">
             <button
@@ -159,22 +131,8 @@ export default function FoodPage() {
 
         {/* 본문 */}
         <div className="flex flex-1 flex-col gap-3 overflow-y-auto px-4 pb-8">
-          {/* GPS 로딩 */}
-          {(gps.status === "idle" || gps.status === "loading") && (
-            <div className="flex flex-col items-center gap-2 py-10 text-center">
-              <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#bb4d00] border-t-transparent" />
-              <p className="text-sm text-[#fee685]">위치를 확인하는 중...</p>
-            </div>
-          )}
-
-          {gps.status === "error" && (
-            <div className="rounded-2xl border border-[#bb4d00]/50 bg-[#2a1a0e] px-4 py-5 text-center">
-              <p className="text-sm leading-6 text-[#fee685]">{gps.message}</p>
-            </div>
-          )}
-
           {/* AI 추천 코멘트 */}
-          {gps.status === "ready" && (dataLoading || (viewMode === "restaurants" ? restaurantComment : accommodationComment)) && (
+          {(dataLoading || (viewMode === "restaurants" ? restaurantComment : accommodationComment)) && (
             <div className="rounded-2xl border border-[#bb4d00] bg-[#2a1a0e] px-4 py-4">
               <p className="mb-2 text-[11px] font-bold tracking-wider text-[#bb4d00]">주모의 추천</p>
               {dataLoading && !(viewMode === "restaurants" ? restaurantComment : accommodationComment) ? (
@@ -192,7 +150,6 @@ export default function FoodPage() {
 
           {/* 목록 로딩 */}
           {dataLoading &&
-            gps.status === "ready" &&
             ((viewMode === "restaurants" && restaurants.length === 0) ||
               (viewMode === "accommodations" && accommodations.length === 0)) && (
               <div className="flex flex-col items-center gap-2 py-6">
@@ -204,13 +161,13 @@ export default function FoodPage() {
             )}
 
           {/* 결과 없음 */}
-          {!dataLoading && gps.status === "ready" && viewMode === "restaurants" && restaurants.length === 0 && (
+          {!dataLoading && viewMode === "restaurants" && restaurants.length === 0 && (
             <div className="py-6 text-center">
               <p className="text-sm text-[#a87a4a]">반경 3km 내 등록된 맛집이 없습니다.</p>
             </div>
           )}
 
-          {!dataLoading && gps.status === "ready" && viewMode === "accommodations" && accommodations.length === 0 && (
+          {!dataLoading && viewMode === "accommodations" && accommodations.length === 0 && (
             <div className="py-6 text-center">
               <p className="text-sm text-[#a87a4a]">반경 3km 내 등록된 숙소가 없습니다.</p>
             </div>
