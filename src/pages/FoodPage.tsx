@@ -258,28 +258,16 @@ export default function FoodPage() {
                 📍 {a.roadAddress ?? "주소 정보 없음"}
               </p>
 
-              {(a.kakaoMapUrl || a.naverMapUrl) && (
-                <div className="mt-3 flex gap-2">
-                  {a.kakaoMapUrl && (
-                    <a
-                      href={a.kakaoMapUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1 rounded-lg bg-[#fee500] py-1.5 text-center text-[11px] font-bold text-black active:scale-95"
-                    >
-                      카카오맵
-                    </a>
-                  )}
-                  {a.naverMapUrl && (
-                    <a
-                      href={a.naverMapUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1 rounded-lg bg-[#03c75a] py-1.5 text-center text-[11px] font-bold text-white active:scale-95"
-                    >
-                      네이버맵
-                    </a>
-                  )}
+              {a.kakaoMapUrl && (
+                <div className="mt-3">
+                  <a
+                    href={a.kakaoMapUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block w-full rounded-lg bg-[#fee500] py-1.5 text-center text-[11px] font-bold text-black active:scale-95"
+                  >
+                    카카오맵
+                  </a>
                 </div>
               )}
             </div>
