@@ -241,6 +241,10 @@ export default function CharSetupPage() {
             onChange={handlePhotoChange}
           />
 
+          <p className="text-center text-sm font-bold text-[#3d1f00]">
+            캐릭터로 만들 내 사진을 촬영 또는 업로드 해주세요
+          </p>
+
           <button
             type="submit"
             disabled={loading || !trait.trim() || !photoFile}

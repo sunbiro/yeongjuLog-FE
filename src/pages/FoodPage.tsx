@@ -191,16 +191,17 @@ export default function FoodPage() {
           )}
 
           {/* 목록 로딩 */}
-          {dataLoading && gps.status === "ready" &&
+          {dataLoading &&
+            gps.status === "ready" &&
             ((viewMode === "restaurants" && restaurants.length === 0) ||
               (viewMode === "accommodations" && accommodations.length === 0)) && (
-            <div className="flex flex-col items-center gap-2 py-6">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#bb4d00] border-t-transparent" />
-              <p className="text-xs text-[#a87a4a]">
-                {viewMode === "restaurants" ? "주변 맛집을 찾는 중..." : "주변 숙소를 찾는 중..."}
-              </p>
-            </div>
-          )}
+              <div className="flex flex-col items-center gap-2 py-6">
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#bb4d00] border-t-transparent" />
+                <p className="text-xs text-[#a87a4a]">
+                  {viewMode === "restaurants" ? "주변 맛집을 찾는 중..." : "주변 숙소를 찾는 중..."}
+                </p>
+              </div>
+            )}
 
           {/* 결과 없음 */}
           {!dataLoading && gps.status === "ready" && viewMode === "restaurants" && restaurants.length === 0 && (
