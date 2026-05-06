@@ -39,6 +39,58 @@ function readFileAsDataUrl(file: File) {
   });
 }
 
+function compressImage(file: File, maxDimension = 1500): Promise<File> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+
+      let { width, height } = img;
+      if (width > maxDimension || height > maxDimension) {
+        if (width >= height) {
+          height = Math.round((height * maxDimension) / width);
+          width = maxDimension;
+        } else {
+          width = Math.round((width * maxDimension) / height);
+          height = maxDimension;
+        }
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        reject(new Error("canvas를 초기화할 수 없습니다."));
+        return;
+      }
+
+      ctx.drawImage(img, 0, 0, width, height);
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            reject(new Error("이미지 압축에 실패했습니다."));
+            return;
+          }
+          resolve(new File([blob], "photo.jpg", { type: "image/jpeg" }));
+        },
+        "image/jpeg",
+        0.85,
+      );
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("이미지를 불러올 수 없습니다."));
+    };
+
+    img.src = objectUrl;
+  });
+}
+
 export default function CharSetupPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -76,8 +128,9 @@ export default function CharSetupPage() {
 
     try {
       setError(null);
-      setPhotoFile(file);
-      setPreview(await readFileAsDataUrl(file));
+      const compressed = await compressImage(file);
+      setPhotoFile(compressed);
+      setPreview(await readFileAsDataUrl(compressed));
     } catch {
       setError("사진을 불러오는 데 실패했습니다. 다른 사진을 선택해 주세요.");
       event.target.value = "";
@@ -111,6 +164,7 @@ export default function CharSetupPage() {
     formData.append(
       "features",
       new Blob([JSON.stringify(features)], { type: "application/json" }),
+      "features.json",
     );
 
     try {
